@@ -1,19 +1,34 @@
-/* Minheap implementation */
-#include <stdio.h>
-#define N 1000
+#ifndef HEADERS_H
+#include "headers.h"
+#endif
+
 #define L_CHILD(i) ((2 * i) + 1)
 #define R_CHILD(i) ((2 * i) + 2)
 #define PAR(i) ((i - 1) / 2)
 
-typedef struct process
+typedef struct
 {
   int pid;
   int priority;
 } process;
 
-process *pqueue[N];
-int size = 0;
+typedef struct
+{
+  size_t capacity;
+  size_t size;
 
+  char (*compare)(process **, process **);
+  process **buffer;
+} priorityQueue;
+
+priorityQueue PRIORITY_QUEUE_DEFAULT = {0, 0, NULL};
+
+/**
+ * Swaps two processes passed in by pointer
+ * @param l first process
+ * @param r second process
+ * @return void
+ */
 void swap(process **l, process **r)
 {
   process *temp = *l;
@@ -21,8 +36,14 @@ void swap(process **l, process **r)
   *r = temp;
 }
 
-/* Return 1 if a < b or 0 otherwise */
-char compare(process *a, process *b)
+/**
+ * Returns comparison of two processes a and b according to priority
+ * Used in priority queue to inclusively sort
+ * @param a First process for comparison
+ * @param b Second process for comparison
+ * @return{char} returns comparison result, 0 if a < b, 1 elsewise
+ */
+char priorityCompare(process *a, process *b)
 {
   if (a->priority < b->priority)
     return 1;
@@ -30,30 +51,77 @@ char compare(process *a, process *b)
     return 0;
 }
 
-process *top(process **pqueue)
+/**
+ * Allocates a buffer in the priority queue
+ * @return -1 on failure, 0 on success
+ */
+int createPQueue(priorityQueue *pqueue, size_t capacity, char (*compare)(process **, process **))
 {
-  return pqueue[0];
+  if (!pqueue || !capacity)
+    return -1;
+  if (pqueue->buffer)
+    return -1;
+
+  if (compare != NULL)
+    pqueue->compare = compare;
+  else
+    pqueue->compare = &priorityCompare;
+
+  pqueue->size = 0;
+  pqueue->capacity = capacity;
+  pqueue->buffer = (process **)calloc(pqueue->capacity, sizeof(process *));
+  return 0;
 }
 
-void enqueue(process **pqueue, int *size, process *p)
+/**
+ * Returns top of the queue
+ * @param{PriorityQueue*} Priority queue object
+ * @return{process*} The process at the top of the queue
+ */
+process *top(priorityQueue *pqueue)
 {
-  pqueue[*size] = p;
+  return pqueue->buffer[0];
+}
+
+/**
+ * Enqueues an element inside the queue
+ * @param{priorityQueue*} Priority queue object
+ * @param{process*} The process to be inserted
+ * @return 0 on success, -1 on failure
+ */
+int enqueue(priorityQueue *pqueue, process *p)
+{
+  if (pqueue->capacity == pqueue->size)
+    return -1;
+  size_t *size = &pqueue->size;
+  pqueue->buffer[*size] = p;
   (*size)++;
 
   // reheap up
 
   int i = *size - 1;
-  while (i != 0 && compare(pqueue[PAR(i)], pqueue[i]))
+  while (i != 0 && compare(pqueue->buffer[PAR(i)], pqueue->buffer[i]))
   {
-    swap(&pqueue[i], &pqueue[PAR(i)]);
+    swap(&pqueue->buffer[i], &pqueue->buffer[PAR(i)]);
     i = PAR(i);
   }
+  return 0;
 }
 
-void dequeue(process **pqueue, int *size)
+/**
+ * Dequeues an element from the top of the queue
+ * @param{priorityQueue*} Priority queue object
+ * @return 0 on success, -1 if the queue is empty
+ */
+int dequeue(priorityQueue *pqueue)
 {
+  if (pqueue->size == 0)
+    return -1;
+
+  size_t *size = &pqueue->size;
+
   (*size)--;
-  pqueue[0] = pqueue[*size];
+  pqueue->buffer[0] = pqueue->buffer[*size];
 
   // reheap down
 
@@ -63,27 +131,29 @@ void dequeue(process **pqueue, int *size)
   {
     if (L_CHILD(i) < *size && R_CHILD(i) < *size)
     {
-      if (compare(pqueue[L_CHILD(i)], pqueue[R_CHILD(i)]) && compare(pqueue[L_CHILD(i)], pqueue[i]))
+      if (compare(pqueue->buffer[L_CHILD(i)], pqueue->buffer[R_CHILD(i)]) && compare(pqueue->buffer[L_CHILD(i)], pqueue->buffer[i]))
       // if l_child < r_child , swap i with l_child
       {
-        swap(&pqueue[i], &pqueue[L_CHILD(i)]);
+        swap(&pqueue->buffer[i], &pqueue->buffer[L_CHILD(i)]);
         i = L_CHILD(i);
       }
-      else if (compare(pqueue[R_CHILD(i)], pqueue[i]))
+      else if (compare(pqueue->buffer[R_CHILD(i)], pqueue->buffer[i]))
       {
-        swap(&pqueue[i], &pqueue[R_CHILD(i)]);
+        swap(&pqueue->buffer[i], &pqueue->buffer[R_CHILD(i)]);
         i = R_CHILD(i);
       }
     }
-    else if (L_CHILD(i) < *size && compare(pqueue[L_CHILD(i)], pqueue[i]))
+    else if (L_CHILD(i) < *size && compare(pqueue->buffer[L_CHILD(i)], pqueue->buffer[i]))
     {
-      swap(&pqueue[i], &pqueue[L_CHILD(i)]);
+      swap(&pqueue->buffer[i], &pqueue->buffer[L_CHILD(i)]);
     }
     else
     {
       break;
     }
   }
+
+  return 0;
 }
 
 int main()
