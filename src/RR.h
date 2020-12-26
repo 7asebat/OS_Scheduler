@@ -64,4 +64,16 @@ int RR_removeProcess(cqueue *queue, process *p) {
   return dequeued ? 0 : -1;
 }
 
+int RR_init(schedulingAlgorithm *runningAlgorithm)
+{
+  runningAlgorithm->insertProcess = &RR_insertProcess;
+  runningAlgorithm->mustPreempt = &RR_mustPreempt;
+  runningAlgorithm->getNextProcess = &RR_getNextProcess;
+  runningAlgorithm->removeProcess = &RR_removeProcess;
+
+  cqueue *queue = (cqueue *)malloc(sizeof(cqueue));
+  cqueue_create(queue, 100);
+  runningAlgorithm->algorithmDS = queue;
+  return 0;
+}
 #endif

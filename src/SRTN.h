@@ -15,7 +15,7 @@ int SRTN_insertProcess(pqueue *queue, process *p);
  * If the top of the queue does not match the current running process
  * @return true if the process should be preempted
  */
-bool SRTN_mustPreempt(pqueue *queue);
+bool SRTN_mustPreempt(pqueue *queue, process *running);
 
 /**
  * Gets the process that should be scheduled next
@@ -42,12 +42,7 @@ bool SRTN_mustPreempt(pqueue *queue, process *running) {
 
 process *SRTN_getNextProcess(pqueue *queue) { 
   // Dequeue current process and enqueue next process
-  process *p = pqueue_dequeue(queue);
-  if (!p) {
-    return NULL;
-  }
-  pqueue_enqueue(queue, p);
-  return p;
+  return pqueue_front(queue);
 }
 
 int SRTN_removeProcess(pqueue *queue, process *p) {

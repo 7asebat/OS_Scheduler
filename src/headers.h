@@ -79,4 +79,19 @@ typedef struct process
     size_t pid;
 } process;
 
+#define ALGORITHM_RR 0
+#define ALGORITHM_HPF 1
+#define ALGORITHM_SRTN 2
+
+typedef struct
+{
+    process *runningProcess;
+    void *algorithmDS;
+
+    int (*insertProcess)(void *, process *);
+    bool (*mustPreempt)(void *);
+    process *(*getNextProcess)(void *);
+    int (*removeProcess)(void *, process *);
+} schedulingAlgorithm;
+
 #endif
