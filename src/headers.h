@@ -21,7 +21,7 @@
 /* #define false 1 */
 
 #define SHKEY 300
-
+#define MSGQKEY 200
 ///==============================
 //don't mess with this variable//
 int *shmaddr; //
