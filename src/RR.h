@@ -3,72 +3,70 @@
 
 #include "cqueue.h"
 
-#define RR_STATUS_WAITING 0
-#define RR_STATUS_RUNNING 1
-
 /**
- * Updates the circular queue, notifying all processes that one quanta has passed
+ * Inserts a process into the data structure
  * @return -1 on failure, 0 on success
  */
-int RR_updateQueue(cqueue *queue, size_t quanta);
+int RR_insertProcess(cqueue *queue, process *p);
 
 /**
- * Pre-empts currently running process and places it at the back of the queue
- * @return -1 on failure, 0 on success
+ * Decides if the scheduler must preempt the current running process
+ * 
+ * The round-robin quanta could be multiple timesteps,
+ * keep a counter which is decremented every time a timestep has passed,
+ * until the quanta is reached.
+ * @return true if the process should be preempted
  */
-int RR_preemptProcess(cqueue *queue);
+bool RR_mustPreempt(cqueue *queue, int *runningTime, int quanta);
 
 /**
- * Schedules a process from the queue if possible
+ * Gets the process that should be scheduled next
+ * 
+ * Also dequeued the process that was previously running
+ * @return NULL on failure, the address of the process on success
+ */
+process *RR_getNextProcess(cqueue *queue);
+
+/**
+ * Removes a process from the data structure
  * @return -1 on failure, 0 on success
  */
-int RR_scheduleProcess(cqueue *queue);
+int RR_removeProcess(process *p);
 
-int RR_updateQueue(cqueue *queue, size_t quanta) {
-  if (!queue) return -1;
-  if (!queue->buffer) return -1;
-  if (!queue->occupied) return -1;
-
-  // Increase waited time for all processes in the queue
-  for (size_t i = queue->front; i != queue->back; i++) {
-    if (queue->buffer[i]) {
-      queue->buffer[i]->waiting += quanta;
-    }
-  }
-  queue->buffer[queue->back]->waiting += quanta;
-  return 0;
+// ==========================================================================================
+int RR_insertProcess(cqueue *queue, process *p) {
+  return cqueue_enqueue(queue, p);
 }
 
-int RR_preemptProcess(cqueue *queue, size_t quanta) {
-  process *running = cqueue_dequeue(queue);
-  if (!running) return -1;
-
-  // Reduce remaining time by a quanta
-  running->remaining = running->remaining < quanta ? 0 : running->remaining - quanta;
-
-  // See if the process has finished
-  if (!running->remaining) {
-    // Insert process deletion here
-    // process_delete(front);
+bool RR_mustPreempt(cqueue *queue, int *remainingTime, int quanta) {
+  if (!remainingTime) {
+    *remainingTime = quanta;
+    return true;
   }
-  else {
-    running->status = RR_STATUS_WAITING;
-    cqueue_enqueue(queue, running);
-  }
+
+  (*remainingTime)--;
+  return false;
 }
 
-int RR_scheduleProcess(cqueue *queue) {
-  process *front = cqueue_front(queue);
-  if (!front) return -1;
-
-  // See if the process is starting for the first time
-  if (!front -> pid) {
-    front->remaining = front->runtime;
-    // Insert process creation here
-    // process_create(front);
+process *RR_getNextProcess(cqueue *queue) { 
+  // Dequeue current process and enqueue next process
+  process *p = cqueue_dequeue(queue);
+  if (!p) {
+    return NULL;
   }
 
-  front->status = RR_STATUS_RUNNING;
+  if (cqueue_enqueue(queue, p)) {
+    return NULL;
+  }
+
+  p = cqueue_front(queue);
+  return p;
+}
+
+int RR_removeProcess(process *p) {
+  process *dequeued = cqueue_dequeue(queue);
+
+  return dequeued == p ? 0 : -1;
 }
 
 #endif
