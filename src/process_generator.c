@@ -1,18 +1,49 @@
 #include "headers.h"
-
+#include<string.h>
 void clearResources(int);
+
+typedef struct{
+    int pid;
+    int arrivalTime;
+    int runTime;
+    int priority;
+}process;
+
+void parseInput(char* fn){
+    FILE* iFile = fopen("processes.txt","r");
+    if(iFile == NULL){
+        perror("Error opening the input file");
+        exit(1);
+    }
+    char chunk[128];
+    while(fgets(chunk,sizeof(chunk),iFile)!=NULL){
+        if(chunk[0]=='#')
+            continue;
+        char * token = strtok(chunk, "\t");
+        int data[4],index=0;
+        // loop through the string to extract all other tokens
+        do{
+            data[index]=atoi(token);
+            token = strtok(NULL,"\t");
+            index++;
+        }while(token!=NULL);
+        process pTemp = {.pid=data[0],.arrivalTime=data[1],.runTime=data[2],.priority=data[3]};
+        //Should push the it into a global queue
+    }
+}
 
 int main(int argc, char *argv[])
 {
     signal(SIGINT, clearResources);
     // TODO Initialization
     // 1. Read the input files.
-    // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
+    char* fileName = "processes.txt";
+    parseInput(fileName);
     // 3. Initiate and create the scheduler and clock processes.
     // 4. Use this function after creating the clock process to initialize clock
     initClk();
     // To get time use this
-    int x = getClk();
+    int x = getClk();   
     printf("current time is %d\n", x);
     // TODO Generation Main Loop
     // 5. Create a data structure for processes and provide it with its parameters.
@@ -24,4 +55,5 @@ int main(int argc, char *argv[])
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
+    exit(0);
 }
