@@ -2,7 +2,7 @@
 
 void clearResources(int);
 
-int main(int argc, char * argv[])
+int main(int argc, char *argv[])
 {
     signal(SIGINT, clearResources);
     // TODO Initialization
