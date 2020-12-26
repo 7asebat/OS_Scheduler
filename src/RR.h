@@ -24,14 +24,20 @@ int RR_preemptProcess(cqueue *queue);
  */
 int RR_scheduleProcess(cqueue *queue);
 
-int RR_updateQueue(cqueue *queue, size_t quanta) {
-  if (!queue) return -1;
-  if (!queue->buffer) return -1;
-  if (!queue->occupied) return -1;
+int RR_updateQueue(cqueue *queue, size_t quanta)
+{
+  if (!queue)
+    return -1;
+  if (!queue->buffer)
+    return -1;
+  if (!queue->occupied)
+    return -1;
 
   // Increase waited time for all processes in the queue
-  for (size_t i = queue->front; i != queue->back; i++) {
-    if (queue->buffer[i]) {
+  for (size_t i = queue->front; i != queue->back; i++)
+  {
+    if (queue->buffer[i])
+    {
       queue->buffer[i]->waiting += quanta;
     }
   }
@@ -39,36 +45,53 @@ int RR_updateQueue(cqueue *queue, size_t quanta) {
   return 0;
 }
 
-int RR_preemptProcess(cqueue *queue, size_t quanta) {
+int RR_preemptProcess(cqueue *queue, size_t quanta)
+{
   process *running = cqueue_dequeue(queue);
-  if (!running) return -1;
+  if (!running)
+    return -1;
 
   // Reduce remaining time by a quanta
   running->remaining = running->remaining < quanta ? 0 : running->remaining - quanta;
 
   // See if the process has finished
-  if (!running->remaining) {
+  if (!running->remaining)
+  {
     // Insert process deletion here
     // process_delete(front);
   }
-  else {
+  else
+  {
     running->status = RR_STATUS_WAITING;
     cqueue_enqueue(queue, running);
   }
 }
 
-int RR_scheduleProcess(cqueue *queue) {
+int RR_scheduleProcess(cqueue *queue)
+{
   process *front = cqueue_front(queue);
-  if (!front) return -1;
+  if (!front)
+    return -1;
 
   // See if the process is starting for the first time
-  if (!front -> pid) {
+  if (!front->pid)
+  {
     front->remaining = front->runtime;
     // Insert process creation here
     // process_create(front);
   }
 
   front->status = RR_STATUS_RUNNING;
+}
+
+int RR_init(schedulingAlgorithm *runningAlgorithm)
+{
+  runningAlgorithm->insertProcess = RR_insertProcess;
+  runningAlgorithm->mustPreempt = RR_mustPreempt;
+  runningAlgorithm->getNextProcess = RR_getNextProcess;
+  runningAlgorithm->removeProcess = RR_removeProcess;
+
+  return 0;
 }
 
 #endif

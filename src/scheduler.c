@@ -1,38 +1,46 @@
 #include <signal.h>
 #include "headers.h"
 
-typedef struct {
-  process *array;
-  int used;
-  int size;
+typedef struct
+{
+    process *array;
+    int used;
+    int size;
 } pcb;
 
 pcb PCB;
 
 process *runningProcess;
 
-void initPCB(int initialSize){
+void initPCB(int initialSize)
+{
     (&PCB)->array = malloc(initialSize * sizeof(process));
     (&PCB)->used = 0;
     (&PCB)->size = initialSize;
 }
 
-void pcb_insert(process element) {
-  if ((&PCB)->used == (&PCB)->size) {
-    (&PCB)->size *= 2;
-    (&PCB)->array = realloc((&PCB)->array, (&PCB)->size * sizeof(process));
-  }
-  (&PCB)->array[(&PCB)->used++] = element;
+void pcb_insert(process element)
+{
+    if ((&PCB)->used == (&PCB)->size)
+    {
+        (&PCB)->size *= 2;
+        (&PCB)->array = realloc((&PCB)->array, (&PCB)->size * sizeof(process));
+    }
+    (&PCB)->array[(&PCB)->used++] = element;
 }
 
-void pcb_remove(process element){
+void pcb_remove(process element)
+{
     int pidToRemove = element.pid;
 
-    for(int i=0; i<PCB.used; i++){
-        if( PCB.array[i].pid == pidToRemove ){
+    for (int i = 0; i < PCB.used; i++)
+    {
+        if (PCB.array[i].pid == pidToRemove)
+        {
 
-            for(int j=i; j<PCB.used-1; j++){
-                PCB.array[j] = PCB.array[j+1];
+            for (int j = i; j < PCB.used - 1; j++)
+            {
+                PCB.array[j] = PCB.array[j + 1];
             }
             PCB.used -= 1;
             break;
@@ -40,21 +48,26 @@ void pcb_remove(process element){
     }
 }
 
-void pcb_update(){
-    for(int i=0; i<PCB.used; i++){
+void pcb_update()
+{
+    for (int i = 0; i < PCB.used; i++)
+    {
         // updating status
-        if(PCB.array[i].status == STATUS_RUNNING && PCB.array[i].pid != runningProcess -> pid){
+        if (PCB.array[i].status == STATUS_RUNNING && PCB.array[i].pid != runningProcess->pid)
+        {
             PCB.array[i].status = STATUS_WAITING;
         }
 
         // updating running and remaining times
-        if(PCB.array[i].status == STATUS_RUNNING){
+        if (PCB.array[i].status == STATUS_RUNNING)
+        {
             PCB.array[i].remaining -= 1;
             PCB.array[i].runtime += 1;
         }
-        
+
         // update waiting time
-        if(PCB.array[i].status == STATUS_WAITING){
+        if (PCB.array[i].status == STATUS_WAITING)
+        {
             PCB.array[i].waiting += 1;
         }
     }
@@ -65,24 +78,29 @@ char *processesInfo[] = {"5", "1"};
 
 int main(int argc, char *argv[])
 {
-    initPCB(10);
+    int algorithm = ALGORITHM_RR;
+    schedulingAlgorithm runningAlgorithm;
 
-    process p1 = {1, 10};
-    process p2 = {2, 50};
-    process p3 = {3, 80};
-
-    pcb_insert(p1);
-    pcb_insert(p2);
-    pcb_insert(p3);    
-    printf("The number of used items : %d\n", PCB.used); 
-
-    pcb_remove(p2);
-    printf("The number of used items : %d\n", PCB.used); 
+    switch (algorithm)
+    {
+    case ALGORITHM_RR:
+        RR_init(&runningAlgorithm);
+        break;
+    case ALGORITHM_HPF:
+        HPF_init(&runningAlgorithm);
+        break;
+    case ALGORITHM_SRTN:
+        SRTN_init(&runningAlgorithm);
+        break;
+    default:
+        break;
+    }
 
     initClk();
 
     int clkProcess = fork();
-    if(clkProcess == 0){
+    if (clkProcess == 0)
+    {
         //child ( the clock process itself )
         execl("clk.out", NULL);
     }
@@ -92,7 +110,8 @@ int main(int argc, char *argv[])
     for (int i = 0; i < numberOfProcesses; i++)
     {
         int processPid = fork();
-        if(processPid == 0){
+        if (processPid == 0)
+        {
             //child ( the process itself )
             execl("process.out", "process.out", processesInfo[i], NULL);
         }
@@ -101,11 +120,11 @@ int main(int argc, char *argv[])
 
         int process_status;
         int exitedProcessPid = wait(&process_status);
-        if(WIFEXITED(process_status)){
+        if (WIFEXITED(process_status))
+        {
             int exit_code = WEXITSTATUS(process_status);
-            printf("process %d: exited with exit code %d\n",exitedProcessPid, exit_code);
+            printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
         }
-
     }
 
     destroyClk(true);

@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <signal.h>
+#include "priority_queue.h"
 
 /* typedef bool short; */
 /* #define true 1 */
@@ -78,5 +79,20 @@ typedef struct process
     size_t status;
     size_t pid;
 } process;
+
+#define ALGORITHM_RR 0
+#define ALGORITHM_HPF 1
+#define ALGORITHM_SRTN 2
+
+typedef struct
+{
+    process *runningProcess;
+    void *algorithmDS;
+
+    int (*insertProcess)(void *, process *);
+    bool (*mustPreempt)(void *);
+    process (*getNextProcess)(void *);
+    int (*removeProcess)(void *, process *);
+} schedulingAlgorithm;
 
 #endif
