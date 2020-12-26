@@ -1,4 +1,6 @@
+#ifndef HEADERS_H
 #include "headers.h"
+#endif
 
 #define L_CHILD(i) ((2 * i) + 1)
 #define R_CHILD(i) ((2 * i) + 2)
@@ -160,38 +162,4 @@ int dequeue(priorityQueue *pqueue)
 void printTop(priorityQueue *pqueue)
 {
   printf("%d\n", top(pqueue)->priority);
-}
-
-int main()
-{
-  priorityQueue *pqueue = (priorityQueue *)malloc(sizeof(priorityQueue));
-
-  createPQueue(pqueue, 50, NULL);
-
-  process *ps[10];
-
-  int i;
-  for (i = 0; i < 10; i++)
-  {
-    ps[i] = (process *)malloc(sizeof(process));
-    ps[i]->priority = i;
-  }
-
-  enqueue(pqueue, ps[2]);
-  printTop(pqueue); // 2
-  enqueue(pqueue, ps[5]);
-  printTop(pqueue); // 5
-  enqueue(pqueue, ps[7]);
-  printTop(pqueue); // 7
-  enqueue(pqueue, ps[1]);
-  printTop(pqueue); // 7
-
-  dequeue(pqueue);
-  printTop(pqueue); // 5
-  dequeue(pqueue);
-  printTop(pqueue); // 2
-  dequeue(pqueue);
-  printTop(pqueue); // 1
-  dequeue(pqueue);
-  printTop(pqueue); // NULL -> throws
 }
