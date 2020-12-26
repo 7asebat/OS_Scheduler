@@ -9,6 +9,8 @@ typedef struct {
 
 pcb PCB;
 
+process *runningProcess;
+
 void initPCB(int initialSize){
     (&PCB)->array = malloc(initialSize * sizeof(process));
     (&PCB)->used = 0;
@@ -36,7 +38,26 @@ void pcb_remove(process element){
             break;
         }
     }
+}
 
+void pcb_update(){
+    for(int i=0; i<PCB.used; i++){
+        // updating status
+        if(PCB.array[i].status == STATUS_RUNNING && PCB.array[i].pid != runningProcess -> pid){
+            PCB.array[i].status = STATUS_WAITING;
+        }
+
+        // updating running and remaining times
+        if(PCB.array[i].status == STATUS_RUNNING){
+            PCB.array[i].remaining -= 1;
+            PCB.array[i].runtime += 1;
+        }
+        
+        // update waiting time
+        if(PCB.array[i].status == STATUS_WAITING){
+            PCB.array[i].waiting += 1;
+        }
+    }
 }
 
 int numberOfProcesses = 2;
