@@ -9,55 +9,56 @@ typedef struct
 } pcb;
 
 pcb PCB;
-
 process *runningProcess;
+schedulingAlgorithm currentAlgorithm;
 
 void initPCB(int initialSize)
 {
-    (&PCB)->array = malloc(initialSize * sizeof(process));
-    (&PCB)->used = 0;
-    (&PCB)->size = initialSize;
+    PCB.array = malloc(initialSize * sizeof(process));
+    PCB.used = 0;
+    PCB.size = initialSize;
 }
 
-void pcb_insert(process element)
+process *pcb_getProcessByPID(int pid)
 {
-    if ((&PCB)->used == (&PCB)->size)
+    process *p = NULL;
+    int i;
+    for (i = 0; i < PCB.used; i++)
     {
-        (&PCB)->size *= 2;
-        (&PCB)->array = realloc((&PCB)->array, (&PCB)->size * sizeof(process));
+        if (PCB.array[i].pid == pid)
+        {
+            break;
+        }
     }
-    (&PCB)->array[(&PCB)->used++] = element;
+    return p;
+}
+
+void pcb_insert(process *element)
+{
+    if (PCB.used == PCB.size)
+    {
+        PCB.size *= 2;
+        PCB.array = realloc(PCB.array, PCB.size * sizeof(process));
+    }
+    element->PCB_idx = PCB.used;
+    PCB.array[PCB.used++] = *element;
 }
 
 void pcb_remove(process element)
 {
     int pidToRemove = element.pid;
 
-    for (int i = 0; i < PCB.used; i++)
+    for (int j = element.PCB_idx; j < PCB.used - 1; j++)
     {
-        if (PCB.array[i].pid == pidToRemove)
-        {
-
-            for (int j = i; j < PCB.used - 1; j++)
-            {
-                PCB.array[j] = PCB.array[j + 1];
-            }
-            PCB.used -= 1;
-            break;
-        }
+        PCB.array[j] = PCB.array[j + 1];
     }
+    PCB.used -= 1;
 }
 
 void pcb_update()
 {
     for (int i = 0; i < PCB.used; i++)
     {
-        // updating status
-        if (PCB.array[i].status == STATUS_RUNNING && PCB.array[i].pid != runningProcess->pid)
-        {
-            PCB.array[i].status = STATUS_WAITING;
-        }
-
         // updating running and remaining times
         if (PCB.array[i].status == STATUS_RUNNING)
         {
@@ -73,24 +74,60 @@ void pcb_update()
     }
 }
 
-int numberOfProcesses = 2;
-char *processesInfo[] = {"5", "1"};
+void preemptProcess(process *p)
+{
+    int PCB_idx = p->PCB_idx;
+    int pid = PCB.array[PCB_idx].pid;
+    PCB.array[PCB_idx].status = STATUS_WAITING;
+    kill(pid, SIGSTOP);
+    // TODO: save context of process
+}
+
+void resumeProcess(process *p)
+{
+    int PCB_idx = p->PCB_idx;
+    int pid = PCB.array[PCB_idx].pid;
+    PCB.array[PCB_idx].status = STATUS_RUNNING;
+    runningProcess = p;
+    kill(pid, SIGCONT);
+    // TODO: resume context of process
+}
+
+void terminatedProcessHandler(int SIGNUM)
+{
+    int process_status;
+    int exitedProcessPid = wait(&process_status);
+    if (WIFEXITED(process_status))
+    {
+        int exit_code = WEXITSTATUS(process_status);
+        printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
+    }
+
+    process *p = pcb_getProcessByPID(exitedProcessPid);
+
+    currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
+
+    pcb_remove(*p);
+
+    signal(SIGCHLD, terminatedProcessHandler);
+}
 
 int main(int argc, char *argv[])
 {
+    signal(SIGCHLD, terminatedProcessHandler);
+
     int algorithm = ALGORITHM_RR;
-    schedulingAlgorithm runningAlgorithm;
 
     switch (algorithm)
     {
     case ALGORITHM_RR:
-        RR_init(&runningAlgorithm);
+        RR_init(&currentAlgorithm);
         break;
     case ALGORITHM_HPF:
-        HPF_init(&runningAlgorithm);
+        HPF_init(&currentAlgorithm);
         break;
     case ALGORITHM_SRTN:
-        SRTN_init(&runningAlgorithm);
+        SRTN_init(&currentAlgorithm);
         break;
     default:
         break;
@@ -101,29 +138,30 @@ int main(int argc, char *argv[])
     int clkProcess = fork();
     if (clkProcess == 0)
     {
-        //child ( the clock process itself )
         execl("clk.out", NULL);
     }
 
-    //TODO implement the scheduler :)
-    //upon termination release the clock resources.
-    for (int i = 0; i < numberOfProcesses; i++)
+    int currentClk, previousClk;
+    previousClk = getClk();
+    while (1)
     {
-        int processPid = fork();
-        if (processPid == 0)
-        {
-            //child ( the process itself )
-            execl("process.out", "process.out", processesInfo[i], NULL);
-        }
-        // send cont signal to process
-        // kill(processPid, SIGCONT);
+        // receive processes from message queue
+        // update PCB
+        // insert new processes into the datastructure
+        // tell the algorithm to insert the process
 
-        int process_status;
-        int exitedProcessPid = wait(&process_status);
-        if (WIFEXITED(process_status))
+        currentClk = getClk();
+        if (currentClk > previousClk)
         {
-            int exit_code = WEXITSTATUS(process_status);
-            printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
+            previousClk = currentClk;
+
+            bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+            if (mustPreempt)
+            {
+                preemptProcess(runningProcess);
+                process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+                resumeProcess(nextProcess);
+            }
         }
     }
 
