@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <limits.h>
 #include <signal.h>
-#include "priority_queue.h"
 
 /* typedef bool short; */
 /* #define true 1 */
@@ -91,7 +90,7 @@ typedef struct
 
     int (*insertProcess)(void *, process *);
     bool (*mustPreempt)(void *);
-    process (*getNextProcess)(void *);
+    process *(*getNextProcess)(void *);
     int (*removeProcess)(void *, process *);
 } schedulingAlgorithm;
 

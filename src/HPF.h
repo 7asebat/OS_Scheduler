@@ -6,25 +6,29 @@
 
 bool HPF_free = false;
 
-int HPF_insertProcess(pqueue *pqueue, process *p)
+int HPF_insertProcess(void *ds, process *p)
 {
-  return pqueue_enqueue(pqueue, p);
+  pqueue *pq = (pqueue *)(ds);
+  return pqueue_enqueue(pq, p);
 }
 
-bool HPF_mustPreempt(pqueue *pqueue)
+bool HPF_mustPreempt(void *ds)
 {
+  pqueue *pq = (pqueue *)(ds);
   return false;
   //return runningProcess->status == WAITING;
 }
 
-process *HPF_getNextProcess(pqueue *pqueue)
+process *HPF_getNextProcess(void *ds)
 {
-  return pqueue_front(pqueue);
+  pqueue *pq = (pqueue *)(ds);
+  return pqueue_front(pq);
 }
 
-int HPF_removeProcess(pqueue *pqueue, process *p)
+int HPF_removeProcess(void *ds, process *p)
 {
-  return pqueue_remove(pqueue, p);
+  pqueue *pq = (pqueue *)(ds);
+  return pqueue_remove(pq, p);
 }
 
 int HPF_init(schedulingAlgorithm *runningAlgorithm)
@@ -34,9 +38,9 @@ int HPF_init(schedulingAlgorithm *runningAlgorithm)
   runningAlgorithm->getNextProcess = &HPF_getNextProcess;
   runningAlgorithm->removeProcess = &HPF_removeProcess;
 
-  priorityQueue *pqueue = (priorityQueue *)malloc(sizeof(priorityQueue));
-  createPQueue(pqueue, 100, priorityCompare);
-  runningAlgorithm->algorithmDS = pqueue;
+  pqueue *pq = (pqueue *)malloc(sizeof(pqueue));
+  pqueue_create(pq, 100, pqueue_pcompare);
+  runningAlgorithm->algorithmDS = pq;
   return 0;
 }
 
