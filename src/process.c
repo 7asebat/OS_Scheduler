@@ -1,20 +1,37 @@
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+
 #include "headers.h"
 
 /* Modify this file as needed*/
 int remainingtime;
 
-int main(int agrc, char * argv[])
+void handler()
+{
+    printf("SIGNAL RECIVED TO CONTINUE");
+    sleep(3);
+    exit(1);
+}
+
+int main(int agrc, char *argv[])
 {
     initClk();
     
-    //TODO it needs to get the remaining time from somewhere
-    //remainingtime = ??;
-    while (remainingtime > 0)
-    {
-        // remainingtime = ??;
+    remainingtime = atoi(argv[1]);
+
+    signal(SIGCONT, handler);
+    printf("My pid is : %d \n", getpid());
+    
+    int currentClk = getClk();
+    while(getClk() < currentClk + remainingtime) {
+        
     }
     
+    exit(1);
     destroyClk(false);
-    
+
     return 0;
 }
