@@ -22,7 +22,7 @@ bool RR_mustPreempt(cqueue *queue, size_t *remainingTime, size_t quanta);
 /**
  * Gets the process that should be scheduled next
  * 
- * Also dequeued the process that was previously running
+ * Also dequeues the process that was previously running
  * @return NULL on failure, the address of the process on success
  */
 process *RR_getNextProcess(cqueue *queue);
