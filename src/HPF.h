@@ -10,7 +10,8 @@ int HPF_insertProcess(priorityQueue *pqueue, process *p)
 
 bool HPF_mustPreempt(priorityQueue *pqueue)
 {
-  return true;
+  return false;
+  //return runningProcess->status == WAITING;
 }
 
 process *HPF_getNextProcess(priorityQueue *pqueue)
