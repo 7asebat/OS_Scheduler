@@ -2,11 +2,6 @@
 #include "headers.h"
 
 typedef struct {
-    int pid;
-    int remainingTime;
-} process;
-
-typedef struct {
   process *array;
   int used;
   int size;
