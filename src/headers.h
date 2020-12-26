@@ -8,12 +8,14 @@
 #include <sys/msg.h>
 #include <sys/wait.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
+#include <limits.h>
 #include <signal.h>
 
-typedef short bool;
-#define true 1
-#define false 1
+/* typedef bool short; */
+/* #define true 1 */
+/* #define false 1 */
 
 #define SHKEY 300
 
