@@ -85,22 +85,9 @@ process *top(priorityQueue *pqueue)
   return pqueue->buffer[0];
 }
 
-/**
- * Enqueues an element inside the queue
- * @param{priorityQueue*} Priority queue object
- * @param{process*} The process to be inserted
- * @return 0 on success, -1 on failure
- */
-int enqueue(priorityQueue *pqueue, process *p)
+void reheapUp(priorityQueue *pqueue)
 {
-  if (pqueue->capacity == pqueue->size)
-    return -1;
-
   size_t *size = &pqueue->size;
-  pqueue->buffer[*size] = p;
-  (*size)++;
-
-  // reheap up
 
   int i = *size - 1;
   while (i != 0 && pqueue->compare(pqueue->buffer[i], pqueue->buffer[PAR(i)]))
@@ -108,27 +95,12 @@ int enqueue(priorityQueue *pqueue, process *p)
     swap(&pqueue->buffer[i], &pqueue->buffer[PAR(i)]);
     i = PAR(i);
   }
-  return 0;
 }
 
-/**
- * Dequeues an element from the top of the queue
- * @param{priorityQueue*} Priority queue object
- * @return 0 on success, -1 if the queue is empty
- */
-int dequeue(priorityQueue *pqueue)
+void reheapDown(priorityQueue *pqueue, int i = 0)
 {
-  if (pqueue->size == 0)
-    return -1;
 
   size_t *size = &pqueue->size;
-
-  (*size)--;
-  pqueue->buffer[0] = pqueue->buffer[*size];
-
-  // reheap down
-
-  int i = 0;
 
   while (i < *size)
   {
@@ -155,8 +127,68 @@ int dequeue(priorityQueue *pqueue)
       break;
     }
   }
+}
+
+/**
+ * Enqueues an element inside the queue
+ * @param{priorityQueue*} Priority queue object
+ * @param{process*} The process to be inserted
+ * @return 0 on success, -1 on failure
+ */
+int enqueue(priorityQueue *pqueue, process *p)
+{
+  if (pqueue->capacity == pqueue->size)
+    return -1;
+  size_t *size = &pqueue->size;
+
+  pqueue->buffer[*size] = p;
+  (*size)++;
+
+  reheapUp(pqueue);
 
   return 0;
+}
+
+/**
+ * Dequeues an element from the top of the queue
+ * @param{priorityQueue*} Priority queue object
+ * @return 0 on success, -1 if the queue is empty
+ */
+int dequeue(priorityQueue *pqueue)
+{
+  if (pqueue->size == 0)
+    return -1;
+
+  size_t *size = &pqueue->size;
+
+  (*size)--;
+  pqueue->buffer[0] = pqueue->buffer[*size];
+
+  // reheap down
+
+  reheapDown(pqueue);
+
+  return 0;
+}
+
+int remove(priorityQueue *pqueue, process *process)
+{
+  int i;
+  size_t *size = &pqueue->size;
+
+  for (i = 0; i < *size; i++)
+  {
+    if (pqueue->buffer[i] == process)
+    {
+      swap(&pqueue->buffer[i], &pqueue->buffer[*size - 1]);
+      (*size)--;
+      reheapDown(pqueue, i);
+      break;
+      return 0;
+    }
+  }
+
+  return -1;
 }
 
 void printTop(priorityQueue *pqueue)
