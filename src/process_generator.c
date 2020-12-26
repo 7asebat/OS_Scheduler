@@ -1,13 +1,10 @@
 #include "headers.h"
 #include<string.h>
+#include "cqueue.h"
+
 void clearResources(int);
 
-typedef struct{
-    int pid;
-    int arrivalTime;
-    int runTime;
-    int priority;
-}process;
+cqueue pQueue; //Processes queue
 
 void parseInput(char* fn){
     FILE* iFile = fopen("processes.txt","r");
@@ -27,8 +24,9 @@ void parseInput(char* fn){
             token = strtok(NULL,"\t");
             index++;
         }while(token!=NULL);
-        process pTemp = {.pid=data[0],.arrivalTime=data[1],.runTime=data[2],.priority=data[3]};
-        //Should push the it into a global queue
+        process *pTemp = (process*) malloc(sizeof(process));
+        pTemp->pid=data[0],pTemp->arrival=data[1],pTemp->runtime=data[2],pTemp->priority=data[3];
+        cqueue_enqueue(&pQueue,pTemp);
     }
 }
 
@@ -36,6 +34,7 @@ int main(int argc, char *argv[])
 {
     signal(SIGINT, clearResources);
     // TODO Initialization
+    cqueue_create(&pQueue,100);
     // 1. Read the input files.
     char* fileName = "processes.txt";
     parseInput(fileName);
