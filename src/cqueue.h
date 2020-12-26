@@ -3,8 +3,7 @@
 
 #include "headers.h"
 
-typedef struct cqueue
-{
+typedef struct cqueue {
   size_t SIZE;
   size_t occupied;
 
@@ -46,20 +45,22 @@ process *cqueue_front(cqueue *queue);
  */
 int cqueue_enqueue(cqueue *queue, process *p);
 
-int cqueue_create(cqueue *queue, size_t size)
-{
-  if (!queue || !size)
-    return -1;
-  if (queue->buffer)
-    return -1;
+/**
+ * Dequeues the last enqueued pointer to process
+ * @return NULL on failure, the pointer on success
+ */
+process *cqueue_backDequeue(cqueue *queue);
+
+int cqueue_create(cqueue *queue, size_t size) {
+  if (!queue || !size) return -1;
+  if (queue->buffer) return -1;
 
   queue->SIZE = size;
   queue->buffer = (process **)calloc(queue->SIZE, sizeof(process *));
   return 0;
 }
 
-int cqueue_free(cqueue *queue)
-{
+int cqueue_free(cqueue *queue) {
   if (!queue)
     return -1;
   if (!queue->buffer)
@@ -69,12 +70,9 @@ int cqueue_free(cqueue *queue)
   return 0;
 }
 
-process *cqueue_dequeue(cqueue *queue)
-{
-  if (!queue)
-    return NULL;
-  if (!queue->buffer)
-    return NULL;
+process *cqueue_dequeue(cqueue *queue) {
+  if (!queue) return NULL;
+  if (!queue->buffer) return NULL;
 
   // Queue is empty
   if (!queue->occupied)
@@ -82,42 +80,49 @@ process *cqueue_dequeue(cqueue *queue)
 
   // Remove front element
   process *p = queue->buffer[queue->front];
-  queue->front = (queue->front + 1) % queue->SIZE; // Move back circularly
+  queue->front = (queue->front + 1) % queue->SIZE;  // Move back circularly
   queue->occupied = queue->occupied ? queue->occupied - 1 : 0;
 
   return p;
 }
 
-process *cqueue_front(cqueue *queue)
-{
-  if (!queue)
-    return NULL;
-  if (!queue->buffer)
-    return NULL;
+process *cqueue_front(cqueue *queue) {
+  if (!queue) return NULL;
+  if (!queue->buffer) return NULL;
 
   // Queue is empty
-  if (!queue->occupied)
-    return NULL;
+  if (!queue->occupied) return NULL;
 
   return queue->buffer[queue->front];
 }
 
-int cqueue_enqueue(cqueue *queue, process *p)
-{
-  if (!queue)
-    return -1;
-  if (!queue->buffer)
-    return -1;
+int cqueue_enqueue(cqueue *queue, process *p) {
+  if (!queue) return -1;
+  if (!queue->buffer) return -1;
 
   // Queue is full
-  if (queue->occupied == queue->SIZE)
-    return -1;
+  if (queue->occupied == queue->SIZE) return -1;
 
   queue->buffer[queue->back] = p;
-  queue->back = (queue->back + 1) % queue->SIZE; // Move back circularly
+  queue->back = (queue->back + 1) % queue->SIZE;  // Move back circularly
   queue->occupied = queue->occupied < queue->SIZE ? queue->occupied + 1 : queue->SIZE;
 
   return 0;
+}
+
+process *cqueue_backDequeue(cqueue *queue) {
+  if (!queue) return NULL;
+  if (!queue->buffer) return NULL;
+
+  // Queue is empty
+  if (!queue->occupied) return NULL;
+
+  // Remove back element
+  process *p = queue->buffer[queue->back];
+  queue->back = (queue->back + queue->SIZE - 1) % queue->SIZE;  // Move forward circularly
+  queue->occupied = queue->occupied ? queue->occupied - 1 : 0;
+
+  return p;
 }
 
 #endif

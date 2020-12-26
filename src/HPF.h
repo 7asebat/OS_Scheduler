@@ -1,28 +1,30 @@
-#include "headers.h"
-#include "priority_queue.h"
+#ifndef HPF_H
+#define HPF_H
 
-int HPF_insertProcess(void *ds, process *p)
+#include "headers.h"
+#include "pqueue.h"
+
+bool HPF_free = false;
+
+int HPF_insertProcess(pqueue *pqueue, process *p)
 {
-  priorityQueue *pqueue = (priorityQueue *)(ds);
-  return enqueue(pqueue, p);
+  return pqueue_enqueue(pqueue, p);
 }
 
-bool HPF_mustPreempt(void *ds)
+bool HPF_mustPreempt(pqueue *pqueue)
 {
   return false;
   //return runningProcess->status == WAITING;
 }
 
-process *HPF_getNextProcess(void *ds)
+process *HPF_getNextProcess(pqueue *pqueue)
 {
-  priorityQueue *pqueue = (priorityQueue *)(ds);
-  return top(pqueue);
+  return pqueue_front(pqueue);
 }
 
-int HPF_removeProcess(void *ds, process *p)
+int HPF_removeProcess(pqueue *pqueue, process *p)
 {
-  priorityQueue *pqueue = (priorityQueue *)(ds);
-  return remove(pqueue, p);
+  return pqueue_remove(pqueue, p);
 }
 
 int HPF_init(schedulingAlgorithm *runningAlgorithm)
@@ -37,3 +39,5 @@ int HPF_init(schedulingAlgorithm *runningAlgorithm)
   runningAlgorithm->algorithmDS = pqueue;
   return 0;
 }
+
+#endif
