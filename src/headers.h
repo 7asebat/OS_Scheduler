@@ -66,4 +66,17 @@ void destroyClk(bool terminateAll)
     }
 }
 
+typedef struct process
+{
+    size_t arrival;
+    size_t runtime;
+
+    size_t remaining;
+    size_t waiting;
+
+    size_t priority;
+    size_t status;
+    size_t pid;
+} process;
+
 #endif
