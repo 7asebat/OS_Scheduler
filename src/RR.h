@@ -46,8 +46,15 @@ int RR_preemptProcess(cqueue *queue, size_t quanta) {
   // Reduce remaining time by a quanta
   running->remaining = running->remaining < quanta ? 0 : running->remaining - quanta;
 
-  running->status = RR_STATUS_WAITING;
-  cqueue_enqueue(queue, running);
+  // See if the process has finished
+  if (!running->remaining) {
+    // Insert process deletion here
+    // process_delete(front);
+  }
+  else {
+    running->status = RR_STATUS_WAITING;
+    cqueue_enqueue(queue, running);
+  }
 }
 
 int RR_scheduleProcess(cqueue *queue) {
@@ -57,10 +64,11 @@ int RR_scheduleProcess(cqueue *queue) {
   // See if the process is starting for the first time
   if (!front -> pid) {
     front->remaining = front->runtime;
-    // createProcess(front);
+    // Insert process creation here
+    // process_create(front);
   }
 
   front->status = RR_STATUS_RUNNING;
-  // See if the process has finished
 }
+
 #endif
