@@ -1,21 +1,24 @@
 #include "headers.h"
+#include "priority_queue.h"
 
-void HPF_insertProcess(process *p)
+bool HPF_free = false;
+
+int HPF_insertProcess(priorityQueue *pqueue, process *p)
 {
+  return enqueue(pqueue, p);
 }
 
-void HPF_updateState()
+bool HPF_mustPreempt(priorityQueue *pqueue)
 {
+  return true;
 }
 
-char HPF_mustPreempt()
+process *HPF_getNextProcess(priorityQueue *pqueue)
 {
+  return top(pqueue);
 }
 
-process *HPF_getNextProcess()
+int HPF_removeProcess(priorityQueue *pqueue, process *p)
 {
-}
-
-void HPF_removeProcess(process *p)
-{
+  return remove(pqueue, p);
 }
