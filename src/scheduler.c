@@ -20,7 +20,7 @@ void initPCB(int initialSize){
     (&PCB)->size = initialSize;
 }
 
-void insertPCB(process element) {
+void pcb_insert(process element) {
   if ((&PCB)->used == (&PCB)->size) {
     (&PCB)->size *= 2;
     (&PCB)->array = realloc((&PCB)->array, (&PCB)->size * sizeof(process));
@@ -28,7 +28,7 @@ void insertPCB(process element) {
   (&PCB)->array[(&PCB)->used++] = element;
 }
 
-void removePCB(process element){
+void pcb_remove(process element){
     int pidToRemove = element.pid;
 
     for(int i=0; i<PCB.used; i++){
@@ -55,12 +55,12 @@ int main(int argc, char *argv[])
     process p2 = {2, 50};
     process p3 = {3, 80};
 
-    insertPCB(p1);
-    insertPCB(p2);
-    insertPCB(p3);    
+    pcb_insert(p1);
+    pcb_insert(p2);
+    pcb_insert(p3);    
     printf("The number of used items : %d\n", PCB.used); 
 
-    removePCB(p2);
+    pcb_remove(p2);
     printf("The number of used items : %d\n", PCB.used); 
 
     initClk();
