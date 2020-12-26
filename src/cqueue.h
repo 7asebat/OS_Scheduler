@@ -57,6 +57,12 @@ process* cqueue_front(cqueue *queue);
  */
 int cqueue_enqueue(cqueue *queue, process *p);
 
+/**
+ * Dequeues the last enqueued pointer to process
+ * @return NULL on failure, the pointer on success
+ */
+process *cqueue_backDequeue(cqueue *queue);
+
 int cqueue_create(cqueue *queue, size_t size) {
   if (!queue || !size) return -1;
   if (queue->buffer) return -1;
@@ -113,4 +119,18 @@ int cqueue_enqueue(cqueue *queue, process *p) {
   return 0;
 }
 
+process* cqueue_backDequeue(cqueue *queue) {
+  if (!queue) return NULL;
+  if (!queue->buffer) return NULL;
+
+  // Queue is empty
+  if (!queue->occupied) return NULL;
+
+  // Remove back element
+  process *p = queue->buffer[queue->back];
+  queue->back = (queue->back + queue->SIZE-1) % queue->SIZE; // Move forward circularly
+  queue->occupied = queue->occupied ? queue->occupied-1 : 0;
+
+  return p;
+}
 #endif

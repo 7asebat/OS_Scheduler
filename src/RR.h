@@ -17,7 +17,7 @@ int RR_insertProcess(cqueue *queue, process *p);
  * until the quanta is reached.
  * @return true if the process should be preempted
  */
-bool RR_mustPreempt(cqueue *queue, int *runningTime, int quanta);
+bool RR_mustPreempt(cqueue *queue, size_t *remainingTime, size_t quanta);
 
 /**
  * Gets the process that should be scheduled next
@@ -31,15 +31,15 @@ process *RR_getNextProcess(cqueue *queue);
  * Removes a process from the data structure
  * @return -1 on failure, 0 on success
  */
-int RR_removeProcess(process *p);
+int RR_removeProcess(cqueue *queue, process *p);
 
 // ==========================================================================================
 int RR_insertProcess(cqueue *queue, process *p) {
   return cqueue_enqueue(queue, p);
 }
 
-bool RR_mustPreempt(cqueue *queue, int *remainingTime, int quanta) {
-  if (!remainingTime) {
+bool RR_mustPreempt(cqueue *queue, size_t *remainingTime, size_t quanta) {
+  if (!(*remainingTime)) {
     *remainingTime = quanta;
     return true;
   }
@@ -54,19 +54,14 @@ process *RR_getNextProcess(cqueue *queue) {
   if (!p) {
     return NULL;
   }
-
-  if (cqueue_enqueue(queue, p)) {
-    return NULL;
-  }
-
-  p = cqueue_front(queue);
+  cqueue_enqueue(queue, p);
   return p;
 }
 
-int RR_removeProcess(process *p) {
-  process *dequeued = cqueue_dequeue(queue);
+int RR_removeProcess(cqueue *queue, process *p) {
+  process *dequeued = cqueue_backDequeue(queue);
 
-  return dequeued == p ? 0 : -1;
+  return dequeued ? 0 : -1;
 }
 
 #endif
