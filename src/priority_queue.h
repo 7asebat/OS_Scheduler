@@ -1,6 +1,4 @@
-#ifndef HEADERS_H
 #include "headers.h"
-#endif
 
 #define L_CHILD(i) ((2 * i) + 1)
 #define R_CHILD(i) ((2 * i) + 2)
@@ -41,11 +39,11 @@ void swap(process **l, process **r)
  * Used in priority queue to inclusively sort
  * @param a First process for comparison
  * @param b Second process for comparison
- * @return{char} returns comparison result, 0 if a < b, 1 elsewise
+ * @return{char} returns comparison result, 1 if a < b, 0 elsewise
  */
 char priorityCompare(process *a, process *b)
 {
-  if (a->priority < b->priority)
+  if (a->priority > b->priority) // a < b if a.priority > b.priority
     return 1;
   else
     return 0;
@@ -80,6 +78,8 @@ int createPQueue(priorityQueue *pqueue, size_t capacity, char (*compare)(process
  */
 process *top(priorityQueue *pqueue)
 {
+  if (pqueue->size == 0)
+    return NULL;
   return pqueue->buffer[0];
 }
 
@@ -93,6 +93,7 @@ int enqueue(priorityQueue *pqueue, process *p)
 {
   if (pqueue->capacity == pqueue->size)
     return -1;
+
   size_t *size = &pqueue->size;
   pqueue->buffer[*size] = p;
   (*size)++;
@@ -100,7 +101,7 @@ int enqueue(priorityQueue *pqueue, process *p)
   // reheap up
 
   int i = *size - 1;
-  while (i != 0 && pqueue->compare(pqueue->buffer[PAR(i)], pqueue->buffer[i]))
+  while (i != 0 && pqueue->compare(pqueue->buffer[i], pqueue->buffer[PAR(i)]))
   {
     swap(&pqueue->buffer[i], &pqueue->buffer[PAR(i)]);
     i = PAR(i);
@@ -154,4 +155,43 @@ int dequeue(priorityQueue *pqueue)
   }
 
   return 0;
+}
+
+void printTop(priorityQueue *pqueue)
+{
+  printf("%d\n", top(pqueue)->priority);
+}
+
+int main()
+{
+  priorityQueue *pqueue = (priorityQueue *)malloc(sizeof(priorityQueue));
+
+  createPQueue(pqueue, 50, NULL);
+
+  process *ps[10];
+
+  int i;
+  for (i = 0; i < 10; i++)
+  {
+    ps[i] = (process *)malloc(sizeof(process));
+    ps[i]->priority = i;
+  }
+
+  enqueue(pqueue, ps[2]);
+  printTop(pqueue); // 2
+  enqueue(pqueue, ps[5]);
+  printTop(pqueue); // 5
+  enqueue(pqueue, ps[7]);
+  printTop(pqueue); // 7
+  enqueue(pqueue, ps[1]);
+  printTop(pqueue); // 7
+
+  dequeue(pqueue);
+  printTop(pqueue); // 5
+  dequeue(pqueue);
+  printTop(pqueue); // 2
+  dequeue(pqueue);
+  printTop(pqueue); // 1
+  dequeue(pqueue);
+  printTop(pqueue); // NULL -> throws
 }
