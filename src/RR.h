@@ -70,7 +70,7 @@ int RR_removeProcess(void *ds, process *p) {
  */
 int RR_init(schedulingAlgorithm *runningAlgorithm) {
   cqueue *queue = (cqueue *)malloc(sizeof(cqueue));
-  cqueue_create(queue, 100);
+  cqueue_create(queue, DS_MAX_SIZE);
 
   schedulingAlgorithm sa = {
     queue,
