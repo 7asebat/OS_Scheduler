@@ -1,5 +1,5 @@
-#ifndef RR_H
-#define RR_H
+#ifndef SRTN_H
+#define SRTN_H
 
 #include "pqueue.h"
 
@@ -40,7 +40,7 @@ bool SRTN_mustPreempt(pqueue *queue, process *running) {
   return pqueue_front(queue) == running;
 }
 
-process *SRTN_getNextProcess(pqueue *queue) { 
+process *SRTN_getNextProcess(pqueue *queue) {
   // Dequeue current process and enqueue next process
   return pqueue_front(queue);
 }
