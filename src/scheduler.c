@@ -127,9 +127,9 @@ int createProcess(process *p) {
   int processPid = fork();
 
   if (processPid == 0) {
-    char *pRemainingTime;
-    sprintf(pRemainingTime, "%zu", p->remaining);
+    char pRemainingTime[10];
 
+    sprintf(pRemainingTime, "%zu", p->remaining);
     execl("process.out", "process.out", pRemainingTime, (char *)NULL);
   }
 
@@ -260,9 +260,6 @@ int main(int argc, char *argv[]) {
     currentClk = getClk();
 
     if (currentClk > previousClk) {
-      fprintf(pFile, "here\n");
-      fflush(pFile);
-
       fprintf(pFile, "New clock, now at %d\n", currentClk);
       fflush(pFile);
       previousClk = currentClk;

@@ -18,15 +18,13 @@ int SRTN_insertProcess(void *ds, process *p) {
  * if the top of the queue does not match the current running process
  * @return true if the process should be preempted
  */
-process *SRTN_running = NULL;
 bool SRTN_mustPreempt(void *ds) {
   pqueue *queue = (pqueue *)ds;
-  return pqueue_front(queue) != SRTN_running;
+  return pqueue_front(queue) != runningProcess;
 }
 
 /**
  * Gets the process that should be scheduled next
- * 
  * @return NULL on failure, the address of the process on success
  */
 process *SRTN_getNextProcess(void *ds) {

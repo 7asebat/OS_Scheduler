@@ -1,11 +1,17 @@
 Scheduler loaded
-here
 New clock, now at 1
 Process received at clock 1, id is 1
-At time 1 process 1 finished arr 1 total 8 remain 8 wait 0 TA 0 WTA 0
-here
 New clock, now at 2
-here
+At time 2 process 1 started arr 1 total 8 remain 8 wait 0
 New clock, now at 3
-here
 New clock, now at 4
+New clock, now at 5
+New clock, now at 6
+New clock, now at 7
+Process received at clock 7, id is 2
+New clock, now at 8
+New clock, now at 9
+At time 9 process 2 finished arr 7 total 29 remain 29 wait 0 TA 0 WTA 0
+New clock, now at 10
+New clock, now at 11
+New clock, now at 12
