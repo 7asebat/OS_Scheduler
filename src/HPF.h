@@ -25,7 +25,7 @@ int HPF_removeProcess(void *ds, process *p) {
 
 int HPF_init(schedulingAlgorithm *runningAlgorithm) {
   pqueue *queue = (pqueue *)malloc(sizeof(pqueue));
-  pqueue_create(queue, 100, pqueue_pcompare);
+  pqueue_create(queue, DS_MAX_SIZE, pqueue_pcompare);
 
   schedulingAlgorithm sa = {
     queue,
