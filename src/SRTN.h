@@ -78,20 +78,4 @@ int SRTN_init(schedulingAlgorithm *runningAlgorithm) {
   return 0;
 }
 
-int SRTN_init(schedulingAlgorithm *runningAlgorithm) {
-  pqueue *queue = (pqueue *)malloc(sizeof(pqueue));
-  pqueue_create(queue, 100, pqueue_pcompare);
-
-  schedulingAlgorithm sa = {
-    queue,
-    &HPF_insertProcess,
-    &HPF_mustPreempt,
-    &HPF_getNextProcess,
-    &HPF_removeProcess,
-  };
-
-  *runningAlgorithm = sa;
-  return 0;
-}
-
 #endif
