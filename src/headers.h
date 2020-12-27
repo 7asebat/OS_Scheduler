@@ -22,6 +22,11 @@
 /* #define true 1 */
 /* #define false 1 */
 
+#define max(a, b) \
+  ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+
 #define SHKEY 300
 
 #define STATUS_WAITING 0
@@ -77,8 +82,11 @@ typedef struct process {
 
   size_t priority;
   size_t status;
+  size_t id;
   size_t pid;
 } process;
+
+process *runningProcess = NULL;
 
 #define ALGORITHM_HPF 1
 #define ALGORITHM_SRTN 2

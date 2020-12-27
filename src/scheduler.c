@@ -13,10 +13,13 @@ typedef struct
 } pcb;
 
 pcb PCB;
-process *runningProcess;
+
 schedulingAlgorithm currentAlgorithm;
+FILE *pFile;
 
 void initPCB(int initialSize) {
+  initialSize = max(1, initialSize);
+
   PCB.array = malloc(initialSize * sizeof(process));
   PCB.used = 0;
   PCB.size = initialSize;
@@ -38,6 +41,7 @@ process *pcb_insert(process *element) {
     PCB.size *= 2;
     PCB.array = realloc(PCB.array, PCB.size * sizeof(process));
   }
+
   element->PCB_idx = PCB.used;
   PCB.array[PCB.used++] = *element;
   return &PCB.array[PCB.used - 1];
@@ -68,23 +72,67 @@ void pcb_update() {
 }
 
 void preemptProcess(process *p) {
+  if (p == NULL)
+    return;
+
   int PCB_idx = p->PCB_idx;
   int pid = PCB.array[PCB_idx].pid;
   PCB.array[PCB_idx].status = STATUS_WAITING;
   kill(pid, SIGSTOP);
-  // TODO: save context of process
+  fprintf(pFile, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
+          getClk(),
+          p->id,
+          p->arrival,
+          p->runtime,
+          p->remaining,
+          p->waiting);
+  fflush(pFile);
+
+  // TODO: store context of process
 }
 
 void resumeProcess(process *p) {
+  if (p == NULL)
+    return;
+
   int PCB_idx = p->PCB_idx;
+
   int pid = PCB.array[PCB_idx].pid;
   PCB.array[PCB_idx].status = STATUS_RUNNING;
   runningProcess = p;
+
   kill(pid, SIGCONT);
+
+  bool started = p->remaining == p->runtime;
+
+  fprintf(pFile, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
+          getClk(),
+          p->id,
+          (started) ? "started" : "resumed",
+          p->arrival,
+          p->runtime,
+          p->remaining,
+          p->waiting);
+  fflush(pFile);
+
   // TODO: resume context of process
 }
 
+/** Creates a stopped process **/
+int createProcess(process *p) {
+  int processPid = fork();
+  if (processPid == 0) {
+    kill(getpid(), SIGSTOP);
+    execl("process.out", "process.out", p->remaining, (char *)NULL);
+  } else {
+    return processPid;
+  }
+}
+
 void terminatedProcessHandler(int SIGNUM) {
+  fprintf(pFile, "here\n");
+  fflush(pFile);
+
   int process_status;
   int exitedProcessPid = wait(&process_status);
   if (WIFEXITED(process_status)) {
@@ -98,10 +146,20 @@ void terminatedProcessHandler(int SIGNUM) {
 
   pcb_remove(*p);
 
+  fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
+          getClk(),
+          p->id,
+          p->arrival,
+          p->runtime,
+          p->remaining,
+          p->waiting,
+          (size_t)0,
+          (size_t)0);
+  fflush(pFile);
+
   signal(SIGCHLD, terminatedProcessHandler);
 }
 
-FILE *pFile;
 void cleanResources(int SIGNUM) {
   fclose(pFile);
   signal(SIGINT, cleanResources);
@@ -111,8 +169,23 @@ int main(int argc, char *argv[]) {
   pFile = fopen("scheduler_log.txt", "w");
   fprintf(pFile, "Scheduler loaded\n");
   fflush(pFile);
-  signal(SIGCHLD, terminatedProcessHandler);
+
+  struct sigaction act;
+
+  act.sa_handler = terminatedProcessHandler;
+  sigemptyset(&act.sa_mask);
+  act.sa_flags = SA_NOCLDSTOP;
+
+  if (sigaction(SIGCHLD, &act, 0) == -1) {
+    perror("sigaction");
+    exit(1);
+  }
+
+  // signal(SIGCHLD, terminatedProcessHandler);
   signal(SIGINT, cleanResources);
+
+  initClk();
+  initPCB(1);
 
   int algorithm = argv[1][0] - '0';
 
@@ -139,13 +212,6 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  initClk();
-
-  int clkProcess = fork();
-  if (clkProcess == 0) {
-    execl("clk.out", "clk.out", (char *)NULL);
-  }
-
   int currentClk, previousClk, msgqENO;
   previousClk = getClk();
 
@@ -157,21 +223,28 @@ int main(int argc, char *argv[]) {
         exit(-1);
       }
     } else {
-      fprintf(pFile, "Process received at clock %d, pid is %d\n", currentClk, (int)msgqBuffer.p.pid);
+      fprintf(pFile, "Process received at clock %d, id is %d\n", currentClk, (int)msgqBuffer.p.id);
       fflush(pFile);
+      int processPid = createProcess(&msgqBuffer.p);
+      msgqBuffer.p.pid = processPid;
+
       process *pcbProcessEntry = pcb_insert(&msgqBuffer.p);
+
       currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);
     }
 
     currentClk = getClk();
+
     if (currentClk > previousClk) {
       fprintf(pFile, "New clock, now at %d\n", currentClk);
       fflush(pFile);
       previousClk = currentClk;
 
       bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+
       if (mustPreempt) {
         preemptProcess(runningProcess);
+
         process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
         resumeProcess(nextProcess);
       }

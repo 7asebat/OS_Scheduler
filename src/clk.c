@@ -18,6 +18,8 @@ void cleanup(int signum) {
 
 /* This file represents the system clock for ease of calculations */
 int main(int argc, char *argv[]) {
+  FILE *pFile = fopen("clk_log.txt", "w");
+
   printf("Clock starting\n");
   signal(SIGINT, cleanup);
   int clk = 0;
@@ -36,5 +38,7 @@ int main(int argc, char *argv[]) {
   while (1) {
     sleep(1);
     (*shmaddr)++;
+    fprintf(pFile, "New clock, now at %d\n", *shmaddr);
+    fflush(pFile);
   }
 }

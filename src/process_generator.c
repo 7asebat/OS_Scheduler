@@ -28,7 +28,7 @@ void parseInput(char *fn) {
       index++;
     } while (token != NULL);
     process *pTemp = (process *)malloc(sizeof(process));
-    pTemp->pid = data[0], pTemp->arrival = data[1], pTemp->runtime = data[2], pTemp->priority = data[3];
+    pTemp->id = data[0], pTemp->arrival = data[1], pTemp->remaining = data[2], pTemp->runtime = data[2], pTemp->priority = data[3];
     cqueue_enqueue(&processQueue, pTemp);
   }
 }
