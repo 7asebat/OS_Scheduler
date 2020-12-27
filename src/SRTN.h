@@ -31,6 +31,8 @@ process *SRTN_getNextProcess(pqueue *queue);
  */
 int SRTN_removeProcess(pqueue *queue, process *p);
 
+int SRTN_init(schedulingAlgorithm *runningAlgorithm);
+
 // ==========================================================================================
 int SRTN_insertProcess(pqueue *queue, process *p) {
   return pqueue_enqueue(queue, p);
@@ -47,6 +49,22 @@ process *SRTN_getNextProcess(pqueue *queue) {
 
 int SRTN_removeProcess(pqueue *queue, process *p) {
   return pqueue_remove(queue, p);
+}
+
+int SRTN_init(schedulingAlgorithm *runningAlgorithm) {
+  pqueue *queue = (pqueue *)malloc(sizeof(pqueue));
+  pqueue_create(queue, 100, pqueue_pcompare);
+
+  schedulingAlgorithm sa = {
+    queue,
+    &HPF_insertProcess,
+    &HPF_mustPreempt,
+    &HPF_getNextProcess,
+    &HPF_removeProcess,
+  };
+
+  *runningAlgorithm = sa;
+  return 0;
 }
 
 #endif

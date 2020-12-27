@@ -1,11 +1,13 @@
 #ifndef HEADERS_H
 #define HEADERS_H
 
+#include <errno.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>  //if you don't use scanf/printf change this include
 #include <stdlib.h>
+#include <string.h>
 #include <sys/file.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
@@ -78,9 +80,9 @@ typedef struct process {
   size_t pid;
 } process;
 
-#define ALGORITHM_RR 0
 #define ALGORITHM_HPF 1
 #define ALGORITHM_SRTN 2
+#define ALGORITHM_RR 3
 
 typedef struct schedulingAlgorithm {
   void *algorithmDS;
@@ -90,5 +92,10 @@ typedef struct schedulingAlgorithm {
   process *(*getNextProcess)(void *ds);
   int (*removeProcess)(void *ds, process *p);
 } schedulingAlgorithm;
+
+typedef struct {
+  long mtype;
+  process p;
+} msgBuf;
 
 #endif

@@ -9,11 +9,6 @@ cqueue processQueue;  //Processes queue
 int selectedAlgorithm;
 pid_t clkPid, schedulerPid;
 
-typedef struct msgBuf {
-  long mtype;
-  process p;
-} msgBuf;
-
 void parseInput(char *fn) {
   FILE *iFile = fopen("processes.txt", "r");
   if (iFile == NULL) {
@@ -54,7 +49,7 @@ void startProcesses() {
     exit(1);
   }
   if (clkPid == 0) {
-    execl("clk.out", NULL);
+    execl("clk.out", "clk.out", (char *)NULL);
   } else {
     schedulerPid = fork();
     if (schedulerPid < 0) {
@@ -62,48 +57,39 @@ void startProcesses() {
       exit(1);
     }
     if (schedulerPid == 0) {
-      printf("CLK process %d PPID: %d", schedulerPid, getppid());
-      execl("scheduler.out", NULL);
+      char selectedAlgorithmChar[5];
+      sprintf(selectedAlgorithmChar, "%d", selectedAlgorithm);
+      printf("forking scheduler.out now\n");
+      execl("scheduler.out", "scheduler.out", selectedAlgorithmChar, (char *)NULL);
     }
   }
 }
 
 int main(int argc, char *argv[]) {
   signal(SIGINT, clearResources);
-  // TODO Initialization
   cqueue_create(&processQueue, 100);
-  // 1. Read the input files.
+
   char *fileName = "processes.txt";
   parseInput(fileName);
-  // 2. Propmt user for the scheduling algorithm
+
   promptUserForAlgorithm();
 
-  //Create a message queue for information passing between scheduler and process_generator
   int msgqId, sendVal;
   msgBuf message;
-  message.mtype = 1;  //Dummy val
+  message.mtype = 1;  // Dummy val
   msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   if (msgqId == -1) {
     perror("Error in creating message queue");
     exit(-1);
   }
 
-  // 3. Initiate and create the scheduler and clock processes.
   startProcesses();
-  // printf("Clk process initialized with pid : %d \nScheduler process initialized with pid %d\n",clkPid,schedulerPid);
 
-  // 4. Use this function after creating the clock process to initialize clock
   initClk();
-  // To get time use this
-  int x = getClk();
-  printf("current time is %d\n", x);
 
-  // TODO Generation Main Loop
   while (processQueue.occupied != 0) {
-    // 5. Create a data structure for processes and provide it with its parameters.
     int currClk = getClk();
     process *temp = cqueue_front(&processQueue);
-    // 6. Send the information to the scheduler at the appropriate time.
     if (temp->arrival <= currClk) {
       temp = cqueue_dequeue(&processQueue);
       message.p = *temp;
@@ -117,12 +103,10 @@ int main(int argc, char *argv[]) {
   int statLoc;
   pid_t cPid = wait(&statLoc);
 
-  // 7. Clear clock resources
   destroyClk(true);
 }
 
 void clearResources(int signum) {
-  //Clearing resources
   destroyClk(true);
   int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   msgctl(msgqId, IPC_RMID, (struct msqid_ds *)0);

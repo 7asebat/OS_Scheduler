@@ -1,5 +1,8 @@
 #include <signal.h>
 
+#include "HPF.h"
+#include "RR.h"
+#include "SRTN.h"
 #include "headers.h"
 
 typedef struct
@@ -30,13 +33,14 @@ process *pcb_getProcessByPID(int pid) {
   return p;
 }
 
-void pcb_insert(process *element) {
+process *pcb_insert(process *element) {
   if (PCB.used == PCB.size) {
     PCB.size *= 2;
     PCB.array = realloc(PCB.array, PCB.size * sizeof(process));
   }
   element->PCB_idx = PCB.used;
   PCB.array[PCB.used++] = *element;
+  return &PCB.array[PCB.used - 1];
 }
 
 void pcb_remove(process element) {
@@ -97,10 +101,20 @@ void terminatedProcessHandler(int SIGNUM) {
   signal(SIGCHLD, terminatedProcessHandler);
 }
 
-int main(int argc, char *argv[]) {
-  signal(SIGCHLD, terminatedProcessHandler);
+FILE *pFile;
+void cleanResources(int SIGNUM) {
+  fclose(pFile);
+  signal(SIGINT, cleanResources);
+}
 
-  int algorithm = ALGORITHM_RR;
+int main(int argc, char *argv[]) {
+  pFile = fopen("scheduler_log.txt", "w");
+  fprintf(pFile, "Scheduler loaded\n");
+  fflush(pFile);
+  signal(SIGCHLD, terminatedProcessHandler);
+  signal(SIGINT, cleanResources);
+
+  int algorithm = argv[1][0] - '0';
 
   switch (algorithm) {
     case ALGORITHM_RR:
@@ -116,23 +130,43 @@ int main(int argc, char *argv[]) {
       break;
   }
 
+  int msgqId;
+  msgBuf msgqBuffer;
+  msgqBuffer.mtype = 1;  // Dummy val
+  msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
+  if (msgqId == -1) {
+    perror("Error in creating message queue");
+    exit(-1);
+  }
+
   initClk();
 
   int clkProcess = fork();
   if (clkProcess == 0) {
-    execl("clk.out", NULL);
+    execl("clk.out", "clk.out", (char *)NULL);
   }
 
-  int currentClk, previousClk;
+  int currentClk, previousClk, msgqENO;
   previousClk = getClk();
+
   while (1) {
-    // receive processes from message queue
-    // update PCB
-    // insert new processes into the datastructure
-    // tell the algorithm to insert the process
+    msgqENO = msgrcv(msgqId, &msgqBuffer, sizeof(process), 1, IPC_NOWAIT);
+    if (msgqENO < 0) {
+      if (errno != ENOMSG) {
+        perror("Error in message queue\n");
+        exit(-1);
+      }
+    } else {
+      fprintf(pFile, "Process received at clock %d, pid is %d\n", currentClk, (int)msgqBuffer.p.pid);
+      fflush(pFile);
+      process *pcbProcessEntry = pcb_insert(&msgqBuffer.p);
+      currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);
+    }
 
     currentClk = getClk();
     if (currentClk > previousClk) {
+      fprintf(pFile, "New clock, now at %d\n", currentClk);
+      fflush(pFile);
       previousClk = currentClk;
 
       bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
