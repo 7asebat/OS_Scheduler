@@ -22,6 +22,9 @@
 
 #define SHKEY 300
 
+#define STATUS_WAITING 0
+#define STATUS_RUNNING 1
+
 ///==============================
 //don't mess with this variable//
 int *shmaddr; //
@@ -68,6 +71,7 @@ void destroyClk(bool terminateAll)
 
 typedef struct process
 {
+    size_t PCB_idx;
     size_t arrival;
     size_t runtime;
 
@@ -85,13 +89,11 @@ typedef struct process
 
 typedef struct
 {
-    process *runningProcess;
     void *algorithmDS;
 
-    int (*insertProcess)(void *, process *);
-    bool (*mustPreempt)(void *);
-    process *(*getNextProcess)(void *);
-    int (*removeProcess)(void *, process *);
+    int (*insertProcess)(void *ds, process *p);
+    bool (*mustPreempt)(void *ds);
+    process *(*getNextProcess)(void *ds);
+    int (*removeProcess)(void *ds, process *p);
 } schedulingAlgorithm;
 
-#endif

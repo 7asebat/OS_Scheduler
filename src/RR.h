@@ -34,12 +34,18 @@ process *RR_getNextProcess(cqueue *queue);
 int RR_removeProcess(cqueue *queue, process *p);
 
 // ==========================================================================================
-int RR_insertProcess(cqueue *queue, process *p) {
+int RR_insertProcess(void *ds, process *p)
+{
+  cqueue *queue = (cqueue *)ds;
   return cqueue_enqueue(queue, p);
 }
 
-bool RR_mustPreempt(cqueue *queue, size_t *remainingTime, size_t quanta) {
-  if (!(*remainingTime)) {
+bool RR_mustPreempt(void *ds, size_t *remainingTime, size_t quanta)
+{
+  cqueue *queue = (cqueue *)ds;
+
+  if (!(*remainingTime))
+  {
     *remainingTime = quanta;
     return true;
   }
@@ -48,17 +54,24 @@ bool RR_mustPreempt(cqueue *queue, size_t *remainingTime, size_t quanta) {
   return false;
 }
 
-process *RR_getNextProcess(cqueue *queue) { 
+process *RR_getNextProcess(void *ds)
+{
+  cqueue *queue = (cqueue *)ds;
+
   // Dequeue current process and enqueue next process
   process *p = cqueue_dequeue(queue);
-  if (!p) {
+  if (!p)
+  {
     return NULL;
   }
   cqueue_enqueue(queue, p);
   return p;
 }
 
-int RR_removeProcess(cqueue *queue, process *p) {
+int RR_removeProcess(void *ds, process *p)
+{
+  cqueue *queue = (cqueue *)ds;
+
   process *dequeued = cqueue_backDequeue(queue);
 
   return dequeued ? 0 : -1;
@@ -76,4 +89,3 @@ int RR_init(schedulingAlgorithm *runningAlgorithm)
   runningAlgorithm->algorithmDS = queue;
   return 0;
 }
-#endif
