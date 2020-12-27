@@ -33,6 +33,8 @@
 #define STATUS_RUNNING 1
 
 #define MSGQKEY 200
+
+#define DS_MAX_SIZE 100
 ///==============================
 //don't mess with this variable//
 int *shmaddr;  //

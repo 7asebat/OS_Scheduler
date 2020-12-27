@@ -160,12 +160,32 @@ void terminatedProcessHandler(int SIGNUM) {
   signal(SIGCHLD, terminatedProcessHandler);
 }
 
+FILE *pcbLogFile;
+
 void cleanResources(int SIGNUM) {
   fclose(pFile);
+  fclose(pcbLogFile);
   signal(SIGINT, cleanResources);
 }
 
+void pcb_log(FILE *logFile) {
+  for (int i = 0; i < PCB.used; i++) {
+    process p = PCB.array[i];
+    fprintf(logFile, "Process pid: %zu \t ", p.pid);
+    fprintf(logFile, "Status: %zu \t ", p.status);
+    fprintf(logFile, "Priority: %zu \t ", p.priority);
+    fprintf(logFile, "Arrival time: %zu \t ", p.arrival);
+    fprintf(logFile, "Runtime: %zu \t ", p.runtime);
+    fprintf(logFile, "Remaining time: %zu \t ", p.remaining);
+    fprintf(logFile, "Waiting time: %zu \t \n", p.waiting);
+    fflush(logFile);
+  }
+  fprintf(logFile, "\n");
+  fflush(logFile);
+}
+
 int main(int argc, char *argv[]) {
+  pcbLogFile = fopen("pcb_log.txt", "w");
   pFile = fopen("scheduler_log.txt", "w");
   fprintf(pFile, "Scheduler loaded\n");
   fflush(pFile);
@@ -229,7 +249,7 @@ int main(int argc, char *argv[]) {
       msgqBuffer.p.pid = processPid;
 
       process *pcbProcessEntry = pcb_insert(&msgqBuffer.p);
-
+      pcb_log(pcbLogFile);
       currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);
     }
 
