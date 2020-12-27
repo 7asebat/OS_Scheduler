@@ -25,6 +25,7 @@
 #define STATUS_WAITING 0
 #define STATUS_RUNNING 1
 
+#define MSGQKEY 200
 ///==============================
 //don't mess with this variable//
 int *shmaddr;  //
