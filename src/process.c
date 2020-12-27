@@ -1,33 +1,27 @@
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
 #include "headers.h"
 
 /* Modify this file as needed*/
 int remainingtime;
 
-void handler() {
-  printf("SIGNAL RECIVED TO CONTINUE");
-  sleep(3);
-  exit(1);
-}
-
-int main(int agrc, char *argv[]) {
-  initClk();
+int main(int argc, char* argv[]) {
+  FILE* pFile = fopen("process_log.txt", "w");
+  fprintf(pFile, "process with pid = %d entered\n", getpid());
+  fflush(pFile);
 
   remainingtime = atoi(argv[1]);
 
-  signal(SIGCONT, handler);
-  printf("My pid is : %d \n", getpid());
+  initClk();
 
-  int currentClk = getClk();
-  while (getClk() < currentClk + remainingtime) {
+  int previousClk = getClk();
+  int currentClk;
+  while (remainingtime > 0) {
+    currentClk = getClk();
+    if (currentClk > previousClk) {
+      remainingtime--;
+      previousClk = currentClk;
+    }
   }
 
-  exit(1);
   destroyClk(false);
 
   return 0;

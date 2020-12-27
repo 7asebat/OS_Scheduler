@@ -30,6 +30,7 @@ process *pcb_getProcessByPID(int pid) {
   int i;
   for (i = 0; i < PCB.used; i++) {
     if (PCB.array[i].pid == pid) {
+      p = &PCB.array[i];
       break;
     }
   }
@@ -47,10 +48,13 @@ process *pcb_insert(process *element) {
   return &PCB.array[PCB.used - 1];
 }
 
-void pcb_remove(process element) {
-  int pidToRemove = element.pid;
+void pcb_remove(process *element) {
+  if (element == NULL)
+    return;
 
-  for (int j = element.PCB_idx; j < PCB.used - 1; j++) {
+  int pidToRemove = element->pid;
+
+  for (int j = element->PCB_idx; j < PCB.used - 1; j++) {
     PCB.array[j] = PCB.array[j + 1];
   }
   PCB.used -= 1;
@@ -103,7 +107,7 @@ void resumeProcess(process *p) {
 
   kill(pid, SIGCONT);
 
-  bool started = p->remaining == p->runtime;
+  bool started = (p->remaining == p->runtime);
 
   fprintf(pFile, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
           getClk(),
@@ -121,19 +125,20 @@ void resumeProcess(process *p) {
 /** Creates a stopped process **/
 int createProcess(process *p) {
   int processPid = fork();
+
   if (processPid == 0) {
-    kill(getpid(), SIGSTOP);
-    execl("process.out", "process.out", p->remaining, (char *)NULL);
-  } else {
-    return processPid;
+    char *pRemainingTime;
+    sprintf(pRemainingTime, "%zu", p->remaining);
+
+    execl("process.out", "process.out", pRemainingTime, (char *)NULL);
   }
+
+  return processPid;
 }
 
 void terminatedProcessHandler(int SIGNUM) {
-  fprintf(pFile, "here\n");
-  fflush(pFile);
-
   int process_status;
+
   int exitedProcessPid = wait(&process_status);
   if (WIFEXITED(process_status)) {
     int exit_code = WEXITSTATUS(process_status);
@@ -144,8 +149,7 @@ void terminatedProcessHandler(int SIGNUM) {
 
   currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
 
-  pcb_remove(*p);
-
+  pcb_remove(p);
   fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
           getClk(),
           p->id,
@@ -256,6 +260,9 @@ int main(int argc, char *argv[]) {
     currentClk = getClk();
 
     if (currentClk > previousClk) {
+      fprintf(pFile, "here\n");
+      fflush(pFile);
+
       fprintf(pFile, "New clock, now at %d\n", currentClk);
       fflush(pFile);
       previousClk = currentClk;
