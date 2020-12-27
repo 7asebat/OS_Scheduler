@@ -2,9 +2,6 @@
 #define HPF_H
 
 #include "pqueue.h"
-
-bool HPF_free = false;
-
 int HPF_insertProcess(void *ds, process *p) {
   pqueue *pq = (pqueue *)(ds);
   return pqueue_enqueue(pq, p);

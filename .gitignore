@@ -74,3 +74,6 @@ dkms.conf
 ### XL3 ###
 **/xl3*
 **/pgnd
+
+### txt files ###
+**/*.txt
