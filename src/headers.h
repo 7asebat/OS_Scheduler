@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <semaphore.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>  //if you don't use scanf/printf change this include
@@ -92,10 +93,15 @@ void down(int sem, int id) {
   p_op.sem_flg = !IPC_NOWAIT;
 
   if (semop(sem, &p_op, 1) == -1) {
-    perror("Error in down()");
+    int x = errno;
+    char errorbuf[255];
+    sprintf(errorbuf, "Error in down(), %d", errno);
+    perror(errorbuf);
     exit(-1);
   }
 }
+
+
 
 void up(int sem, int id) {
   struct sembuf v_op;

@@ -11,44 +11,6 @@ schedulingAlgorithm currentAlgorithm;
 FILE *pFile;
 FILE *pcbLogFile;
 
-void terminatedProcessHandler(int SIGNUM) {
-  int process_status;
-
-  int exitedProcessPid = wait(&process_status);
-  if (WIFEXITED(process_status)) {
-    int exit_code = WEXITSTATUS(process_status);
-    printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
-  }
-  process *p = pcb_getProcessByPID(exitedProcessPid);
-
-  currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
-
-  fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
-          getClk(),
-          p->id,
-          p->arrival,
-          p->runtime,
-          p->remaining,
-          p->waiting,
-          (size_t)0,
-          (size_t)0);
-  fflush(pFile);
-  runningProcess = NULL;
-
-  pcb_remove(p);
-
-  bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
-
-  if (mustPreempt) {
-    preemptProcess(runningProcess);
-    process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
-
-    resumeProcess(nextProcess);
-  }
-
-  // signal(SIGCHLD, terminatedProcessHandler);
-}
-
 void cleanResources(int SIGNUM) {
   fclose(pFile);
   fclose(pcbLogFile);
@@ -96,6 +58,44 @@ void scheduler_resumeProcess(process *p) {
   fflush(pFile);
 
   // TODO: resume context of process
+}
+
+void terminatedProcessHandler(int SIGNUM) {
+  int process_status;
+
+  int exitedProcessPid = wait(&process_status);
+  if (WIFEXITED(process_status)) {
+    int exit_code = WEXITSTATUS(process_status);
+    printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
+  }
+  process *p = pcb_getProcessByPID(exitedProcessPid);
+
+  currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
+
+  fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
+          getClk(),
+          p->id,
+          p->arrival,
+          p->runtime,
+          p->remaining,
+          p->waiting,
+          (size_t)0,
+          (size_t)0);
+  fflush(pFile);
+  runningProcess = NULL;
+
+  pcb_remove(p);
+
+  bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+
+  if (mustPreempt) {
+    scheduler_preemptProcess(runningProcess);
+    process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+
+    scheduler_resumeProcess(nextProcess);
+  }
+
+  // signal(SIGCHLD, terminatedProcessHandler);
 }
 
 /**

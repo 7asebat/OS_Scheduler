@@ -4,6 +4,16 @@
 int remainingtime;
 
 int main(int argc, char* argv[]) {
+  struct sigaction act;
+
+  act.sa_handler = SIG_DFL;
+  act.sa_flags = SA_RESTART;
+
+  if (sigaction(SIGCONT, &act, 0) == -1) {
+    perror("sigaction");
+    exit(1);
+  }
+
   char logFileName[100];
   sprintf(logFileName, "logs/process_%d.txt", (int)getpid());
 

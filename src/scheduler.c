@@ -11,29 +11,20 @@ int main(int argc, char *argv[]) {
 
   int currentClk, previousClk = -1;
   while (1) {
-    msgqENO = msgrcv(msgqId, &msgqBuffer, sizeof(process), 1, IPC_NOWAIT);
-    if (msgqENO < 0) {
-      if (errno != ENOMSG) {
-        perror("Error in message queue\n");
-        exit(-1);
-      }
+    currentClk = getClk();
+    if (scheduler_getMessage(msgqId, &msgqBuffer, currentClk)) {
     } else {
-      scheduler_createProcess(&msgqBuffer, getClk());
-      if (runningProcess == NULL) {
-        bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+      scheduler_createProcess(&msgqBuffer, currentClk);
 
-        if (mustPreempt) {
-          scheduler_preemptProcess(runningProcess);
-          process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+      bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
 
-          scheduler_resumeProcess(nextProcess);
-        }
+      if (mustPreempt) {
+        scheduler_preemptProcess(runningProcess);
+        process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+
+        scheduler_resumeProcess(nextProcess);
       }
     }
-
-    currentClk = getClk();
-    if (!scheduler_getMessage(msgqId, &msgqBuffer, currentClk))
-      scheduler_createProcess(&msgqBuffer, currentClk);
 
     if (currentClk > previousClk) {
       previousClk = currentClk;
