@@ -4,8 +4,8 @@
 #include "HPF.h"
 #include "RR.h"
 #include "SRTN.h"
-#include "pcb.h"
 #include "headers.h"
+#include "pcb.h"
 
 schedulingAlgorithm currentAlgorithm;
 FILE *pFile;
@@ -93,7 +93,7 @@ void scheduler_resumeProcess(process *p) {
 /**
  * @return msqId
  */
-int scheduler_init(int algorithm) {
+int scheduler_init(int algorithm, int *msgqId_p, int *semid_p) {
   pcbLogFile = fopen("logs/pcb_log.txt", "w");
   pFile = fopen("logs/scheduler_log.txt", "w");
   fprintf(pFile, "Scheduler loaded\n");
@@ -137,7 +137,26 @@ int scheduler_init(int algorithm) {
     exit(-1);
   }
 
-  return msgqId;
+  *msgqId_p = msgqId;
+
+  int semid = semget(SEMKEY, 1, 0666 | IPC_CREAT);
+
+  if (semid == -1) {
+    perror("error in creating semaphore");
+    exit(-1);
+  }
+
+  *semid_p = semid;
+
+  Semun semun;
+
+  semun.val = 0; /* initial value of the semaphore, Binary semaphore */
+  if (semctl(semid, 0, SETVAL, semun) == -1) {
+    perror("Error in semctl");
+    exit(-1);
+  }
+
+  return 0;
 }
 
 /**
