@@ -36,7 +36,15 @@ void terminatedProcessHandler(int SIGNUM) {
   runningProcess = NULL;
 
   pcb_remove(p);
-  runningProcess = NULL;
+
+  bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+
+  if (mustPreempt) {
+    preemptProcess(runningProcess);
+    process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+
+    resumeProcess(nextProcess);
+  }
 
   // signal(SIGCHLD, terminatedProcessHandler);
 }
@@ -184,11 +192,13 @@ void scheduler_createProcess(msgBuf *msgqBuffer, int currentClk) {
 
   int processPid = fork();
   if (processPid == 0) {
-    raise(SIGSTOP);
+    // raise(SIGSTOP);
     char pRemainingTime[10];
     sprintf(pRemainingTime, "%zu", msgqBuffer->p.remaining);
     execl("bin/process.out", "process.out", pRemainingTime, (char *)NULL);
   }
+
+  kill(processPid, SIGSTOP);
 
   msgqBuffer->p.pid = processPid;
 

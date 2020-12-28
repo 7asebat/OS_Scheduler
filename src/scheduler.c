@@ -5,8 +5,7 @@ int main(int argc, char *argv[]) {
   int msgqId, semid;
   scheduler_init(algorithm, &msgqId, &semid);
 
-  int currentClk, previousClk, msgqENO;
-  previousClk = 0;
+  int msgqENO;
   msgBuf msgqBuffer;
   msgqBuffer.mtype = 1;  // Dummy val
 
@@ -19,22 +18,15 @@ int main(int argc, char *argv[]) {
         exit(-1);
       }
     } else {
-      fprintf(pFile, "Process received at clock %d, id is %d\n", currentClk, (int)msgqBuffer.p.id);
-      fflush(pFile);
-      int processPid = createProcess(&msgqBuffer.p);
-      msgqBuffer.p.pid = processPid;
-
-      process *pcbProcessEntry = pcb_insert(&msgqBuffer.p);
-      currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);
-
+      scheduler_createProcess(&msgqBuffer, getClk());
       if (runningProcess == NULL) {
         bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
 
         if (mustPreempt) {
-          preemptProcess(runningProcess);
+          scheduler_preemptProcess(runningProcess);
           process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
 
-          resumeProcess(nextProcess);
+          scheduler_resumeProcess(nextProcess);
         }
       }
     }
