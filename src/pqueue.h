@@ -37,7 +37,7 @@ void __pqueue_swap(process **l, process **r) {
  * @return{char} returns comparison result, 1 if a < b, 0 elsewise
  */
 bool pqueue_pcompare(process *a, process *b) {
-  if (a->priority > b->priority)  // a < b if a.priority > b.priority
+  if (a->priority < b->priority)  // a < b if a.priority > b.priority
     return true;
   else
     return false;
@@ -165,5 +165,44 @@ int pqueue_remove(pqueue *queue, process *process) {
 // {
 //   printf("%d\n", pqueue_front(pqueue)->priority);
 // }
+/* Test code for pq
+void pqueue_print(pqueue *pq) {
+  for (int i = 0; i < pq->size; i++) {
+    printf("%d ", pq->buffer[i]->priority);
+  }
+  printf("\n");
+}
 
+int main() {
+  pqueue *pq = (pqueue *)malloc(sizeof(pqueue));
+  pqueue_create(pq, 100, pqueue_pcompare);
+
+  process *p[10];
+  for (int i = 0; i < 10; i++) {
+    p[i] = (process *)malloc(sizeof(process));
+    p[i]->pid = i;
+    p[i]->priority = i;
+  }
+
+  pqueue_enqueue(pq, p[5]);
+  pqueue_print(pq);
+  pqueue_enqueue(pq, p[3]);
+  pqueue_print(pq);
+  pqueue_enqueue(pq, p[7]);
+  pqueue_print(pq);
+  pqueue_enqueue(pq, p[8]);
+  pqueue_print(pq);
+  pqueue_enqueue(pq, p[2]);
+  pqueue_print(pq);
+
+  pqueue_remove(pq, p[7]);
+  pqueue_print(pq);
+
+  pqueue_remove(pq, p[2]);
+  pqueue_print(pq);
+
+  pqueue_remove(pq, p[5]);
+  pqueue_print(pq);
+}
+*/
 #endif
