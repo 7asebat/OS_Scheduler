@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, clearResources);
   cqueue_create(&processQueue, 100);
 
-  char *fileName = "processes.txt";
+  char *fileName = "../input/processes.txt";
   parseInput(fileName);
 
   promptUserForAlgorithm();

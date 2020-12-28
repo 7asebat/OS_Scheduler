@@ -198,8 +198,8 @@ void pcb_log(FILE *logFile) {
 }
 
 int main(int argc, char *argv[]) {
-  pcbLogFile = fopen("pcb_log.txt", "w");
-  pFile = fopen("scheduler_log.txt", "w");
+  pcbLogFile = fopen("../logs/pcb_log.txt", "w");
+  pFile = fopen("../logs/scheduler_log.txt", "w");
   fprintf(pFile, "Scheduler loaded\n");
   fflush(pFile);
 
