@@ -24,8 +24,8 @@ bool SRTN_mustPreempt(void *ds) {
 }
 
 /**
- * Gets the process that should be scheduled next
- * @return NULL on failure, the address of the process on success
+ * Gets the process that should be scheduled next.
+ * @return NULL on failure, the address of the process on success.
  */
 process *SRTN_getNextProcess(void *ds) {
   pqueue *queue = (pqueue *)ds;
@@ -33,8 +33,8 @@ process *SRTN_getNextProcess(void *ds) {
 }
 
 /**
- * Removes a process from the data structure
- * @return -1 on failure, 0 on success
+ * Removes a process from the data structure.
+ * @return -1 on failure, 0 on success.
  */
 int SRTN_removeProcess(void *ds, process *p) {
   pqueue *queue = (pqueue *)ds;
@@ -42,27 +42,25 @@ int SRTN_removeProcess(void *ds, process *p) {
 }
 
 /**
- * Compares a, b and returns true if a should come before b. 
- * The comparison criteria is the remaining time
+ * Priority queue comparator function for the SRTN algorithm.
+ * The comparison criteria is the remaining time.
+ * @return true if a should come before b.
  */
 bool SRTN_compare(process *a, process *b) {
-  if (a->remaining < b->remaining)  // a < b if a.priority > b.priority
-    return true;
-  else
-    return false;
+  return a->remaining < b->remaining;  // a < b if a.priority > b.priority
 }
 
 /**
  * Assigns the pre-emptive Shortest Remaining Time Next algorithm
  * to the scheduler. 
  * 
- * Also initializes the SRTN data structure
+ * Also initializes the SRTN data structure.
  * @note SRTN_compare or &SRTN_compare?
  * @return -1 on failure, 0 on success
  */
 int SRTN_init(schedulingAlgorithm *runningAlgorithm) {
   pqueue *queue = (pqueue *)malloc(sizeof(pqueue));
-  pqueue_create(queue, DS_MAX_SIZE, SRTN_compare);
+  pqueue_create(queue, DS_MAX_SIZE, &SRTN_compare);
 
   schedulingAlgorithm sa = {
     queue,

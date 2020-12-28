@@ -1,7 +1,7 @@
 #ifndef HPF_H
 #define HPF_H
-
 #include "pqueue.h"
+
 int HPF_insertProcess(void *ds, process *p) {
   pqueue *pq = (pqueue *)(ds);
   return pqueue_enqueue(pq, p);
