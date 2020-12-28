@@ -12,7 +12,7 @@ int RR_insertProcess(void *ds, process *p) {
   return cqueue_enqueue(queue, p);
 }
 
-size_t RR_quanta = 8;
+size_t RR_quanta = 2;
 size_t RR_remainingTime;
 /**
  * Decides if the scheduler must preempt the current running process. 
@@ -92,3 +92,4 @@ int RR_init(schedulingAlgorithm *runningAlgorithm) {
   return 0;
 }
 
+#endif

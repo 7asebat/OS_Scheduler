@@ -2,6 +2,7 @@ PROCESS_COUNT?=8
 
 build:
 	mkdir -p bin input logs
+	rm -rf logs/process_*.txt
 	gcc src/process_generator.c -o bin/process_generator.out
 	gcc src/clk.c -o bin/clk.out
 	gcc src/scheduler.c -o bin/scheduler.out

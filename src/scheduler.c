@@ -1,9 +1,9 @@
 #include <signal.h>
 
-#include "headers.h"
 #include "HPF.h"
 #include "RR.h"
 #include "SRTN.h"
+#include "headers.h"
 
 typedef struct
 {
@@ -107,7 +107,6 @@ void resumeProcess(process *p) {
 
   int pid = p->pid;
   p->status = STATUS_RUNNING;
-
   kill(pid, SIGCONT);
 
   bool started = (p->remaining == p->runtime);
@@ -130,12 +129,13 @@ int createProcess(process *p) {
   int processPid = fork();
 
   if (processPid == 0) {
-    raise(SIGSTOP);
+    // raise(SIGSTOP);
     char pRemainingTime[10];
     sprintf(pRemainingTime, "%zu", p->remaining);
     execl("bin/process.out", "process.out", pRemainingTime, (char *)NULL);
   }
 
+  kill(processPid, SIGSTOP);
   return processPid;
 }
 
@@ -161,10 +161,18 @@ void terminatedProcessHandler(int SIGNUM) {
           (size_t)0,
           (size_t)0);
   fflush(pFile);
-  runningProcess = NULL;
 
   pcb_remove(p);
   runningProcess = NULL;
+
+  bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+
+  if (mustPreempt) {
+    preemptProcess(runningProcess);
+    process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+
+    resumeProcess(nextProcess);
+  }
 
   //  signal(SIGCHLD, terminatedProcessHandler);
 }
@@ -222,17 +230,17 @@ int main(int argc, char *argv[]) {
   int algorithm = argv[1][0] - '0';
 
   switch (algorithm) {
-    case ALGORITHM_RR:
-      RR_init(&currentAlgorithm);
-      break;
-    case ALGORITHM_HPF:
-      HPF_init(&currentAlgorithm);
-      break;
-    case ALGORITHM_SRTN:
-      SRTN_init(&currentAlgorithm);
-      break;
-    default:
-      break;
+  case ALGORITHM_RR:
+    RR_init(&currentAlgorithm);
+    break;
+  case ALGORITHM_HPF:
+    HPF_init(&currentAlgorithm);
+    break;
+  case ALGORITHM_SRTN:
+    SRTN_init(&currentAlgorithm);
+    break;
+  default:
+    break;
   }
 
   int msgqId;
@@ -244,8 +252,23 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
+  int semid = semget(SEMKEY, 1, 0666 | IPC_CREAT);
+
+  if (semid == -1) {
+    perror("error in creating semaphore");
+    exit(-1);
+  }
+
+  Semun semun;
+
+  semun.val = 0; /* initial value of the semaphore, Binary semaphore */
+  if (semctl(semid, 0, SETVAL, semun) == -1) {
+    perror("Error in semctl");
+    exit(-1);
+  }
+
   int currentClk, previousClk, msgqENO;
-  previousClk = getClk();
+  previousClk = 0;
 
   while (1) {
     msgqENO = msgrcv(msgqId, &msgqBuffer, sizeof(process), 1, IPC_NOWAIT);
@@ -262,15 +285,23 @@ int main(int argc, char *argv[]) {
 
       process *pcbProcessEntry = pcb_insert(&msgqBuffer.p);
       currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);
+
+      if (runningProcess == NULL) {
+        bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+
+        if (mustPreempt) {
+          preemptProcess(runningProcess);
+          process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+
+          resumeProcess(nextProcess);
+        }
+      }
     }
 
     currentClk = getClk();
 
     if (currentClk > previousClk) {
-      pcb_log(pcbLogFile);
-
       previousClk = currentClk;
-
       pcb_update();
 
       bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
@@ -281,6 +312,8 @@ int main(int argc, char *argv[]) {
 
         resumeProcess(nextProcess);
       }
+      pcb_log(pcbLogFile);
+      up(semid, 0);
     }
   }
 
