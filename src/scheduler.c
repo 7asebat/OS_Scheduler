@@ -65,7 +65,6 @@ void pcb_update() {
     // updating running and remaining times
     if (PCB.array[i].status == STATUS_RUNNING) {
       PCB.array[i].remaining -= 1;
-      PCB.array[i].runtime += 1;
     }
 
     // update waiting time
@@ -96,6 +95,7 @@ void preemptProcess(process *p) {
 }
 
 void resumeProcess(process *p) {
+  runningProcess = p;
   if (p == NULL)
     return;
 
@@ -103,7 +103,6 @@ void resumeProcess(process *p) {
 
   int pid = PCB.array[PCB_idx].pid;
   PCB.array[PCB_idx].status = STATUS_RUNNING;
-  runningProcess = p;
 
   kill(pid, SIGCONT);
 
@@ -149,8 +148,8 @@ void terminatedProcessHandler(int SIGNUM) {
 
   currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
 
-  fprintf(pFile, "here\n");
-  fflush(pFile);
+  // fprintf(pFile, "here\n");
+  // fflush(pFile);
 
   fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
           getClk(),
@@ -264,15 +263,6 @@ int main(int argc, char *argv[]) {
     currentClk = getClk();
 
     if (currentClk > previousClk) {
-      int runningProcessId = -1;
-      if (runningProcess != NULL) {
-        runningProcessId = runningProcess->id;
-      } else {
-        runningProcessId = -1;
-      }
-
-      fprintf(pFile, "New clock, now at %d, currently running process is %d\n", currentClk, runningProcessId);
-      fflush(pFile);
       previousClk = currentClk;
 
       pcb_update();
@@ -284,11 +274,20 @@ int main(int argc, char *argv[]) {
 
         process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
 
-        fprintf(pFile, "here\n");
-        fflush(pFile);
+        // fprintf(pFile, "here\n");
+        // fflush(pFile);
 
         resumeProcess(nextProcess);
       }
+
+      int runningProcessId = -1;
+      if (runningProcess != NULL) {
+        runningProcessId = runningProcess->id;
+      } else {
+        runningProcessId = -1;
+      }
+      fprintf(pFile, "New clock, now at %d, currently running process is %d\n", currentClk, runningProcessId);
+      fflush(pFile);
     }
   }
 
