@@ -7,7 +7,7 @@
 
 typedef struct
 {
-  process *array;
+  process **array;
   int used;
   int size;
 } pcb;
@@ -29,8 +29,8 @@ process *pcb_getProcessByPID(int pid) {
   process *p = NULL;
   int i;
   for (i = 0; i < PCB.used; i++) {
-    if (PCB.array[i].pid == pid) {
-      p = &PCB.array[i];
+    if (PCB.array[i]->pid == pid) {
+      p = PCB.array[i];
       break;
     }
   }
@@ -40,36 +40,44 @@ process *pcb_getProcessByPID(int pid) {
 process *pcb_insert(process *element) {
   if (PCB.used == PCB.size) {
     PCB.size *= 2;
-    PCB.array = realloc(PCB.array, PCB.size * sizeof(process));
+    PCB.array = realloc(PCB.array, PCB.size * sizeof(process *));
   }
 
-  element->PCB_idx = PCB.used;
-  PCB.array[PCB.used++] = *element;
-  return &PCB.array[PCB.used - 1];
+  process *newElement = (process *)malloc(sizeof(process));
+  *newElement = *element;
+
+  PCB.array[PCB.used++] = newElement;
+  return PCB.array[PCB.used - 1];
 }
 
 void pcb_remove(process *element) {
-  if (element == NULL)
-    return;
-
   int pidToRemove = element->pid;
 
-  for (int j = element->PCB_idx; j < PCB.used - 1; j++) {
-    PCB.array[j] = PCB.array[j + 1];
+  process *toBeRemoved;
+  for (int i = 0; i < PCB.used; i++) {
+    if (PCB.array[i]->pid == pidToRemove) {
+      toBeRemoved = PCB.array[i];
+      for (int j = i; j < PCB.used - 1; j++) {
+        PCB.array[j] = PCB.array[j + 1];
+      }
+      PCB.used -= 1;
+      break;
+    }
   }
-  PCB.used -= 1;
+
+  free(toBeRemoved);
 }
 
 void pcb_update() {
   for (int i = 0; i < PCB.used; i++) {
     // updating running and remaining times
-    if (PCB.array[i].status == STATUS_RUNNING) {
-      PCB.array[i].remaining -= 1;
+    if (PCB.array[i]->status == STATUS_RUNNING) {
+      PCB.array[i]->remaining -= 1;
     }
 
     // update waiting time
-    if (PCB.array[i].status == STATUS_WAITING) {
-      PCB.array[i].waiting += 1;
+    if (PCB.array[i]->status == STATUS_WAITING) {
+      PCB.array[i]->waiting += 1;
     }
   }
 }
@@ -78,9 +86,8 @@ void preemptProcess(process *p) {
   if (p == NULL)
     return;
 
-  int PCB_idx = p->PCB_idx;
-  int pid = PCB.array[PCB_idx].pid;
-  PCB.array[PCB_idx].status = STATUS_WAITING;
+  int pid = p->pid;
+  p->status = STATUS_WAITING;
   kill(pid, SIGSTOP);
   fprintf(pFile, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
           getClk(),
@@ -99,10 +106,8 @@ void resumeProcess(process *p) {
   if (p == NULL)
     return;
 
-  int PCB_idx = p->PCB_idx;
-
-  int pid = PCB.array[PCB_idx].pid;
-  PCB.array[PCB_idx].status = STATUS_RUNNING;
+  int pid = p->pid;
+  p->status = STATUS_RUNNING;
 
   kill(pid, SIGCONT);
 
@@ -148,9 +153,6 @@ void terminatedProcessHandler(int SIGNUM) {
 
   currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
 
-  // fprintf(pFile, "here\n");
-  // fflush(pFile);
-
   fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
           getClk(),
           p->id,
@@ -164,7 +166,8 @@ void terminatedProcessHandler(int SIGNUM) {
 
   pcb_remove(p);
   runningProcess = NULL;
-  signal(SIGCHLD, terminatedProcessHandler);
+
+  //  signal(SIGCHLD, terminatedProcessHandler);
 }
 
 FILE *pcbLogFile;
@@ -176,18 +179,21 @@ void cleanResources(int SIGNUM) {
 }
 
 void pcb_log(FILE *logFile) {
+  fprintf(logFile, "---------------------------------\n");
+  fprintf(logFile, "clk = %d\n", getClk());
   for (int i = 0; i < PCB.used; i++) {
-    process p = PCB.array[i];
-    fprintf(logFile, "Process pid: %zu \t ", p.pid);
-    fprintf(logFile, "Status: %zu \t ", p.status);
-    fprintf(logFile, "Priority: %zu \t ", p.priority);
-    fprintf(logFile, "Arrival time: %zu \t ", p.arrival);
-    fprintf(logFile, "Runtime: %zu \t ", p.runtime);
-    fprintf(logFile, "Remaining time: %zu \t ", p.remaining);
-    fprintf(logFile, "Waiting time: %zu \t \n", p.waiting);
+    process *p = PCB.array[i];
+    fprintf(logFile, "Process id: %zu \t ", p->id);
+    fprintf(logFile, "Process pid: %zu \t ", p->pid);
+    fprintf(logFile, "Status: %zu \t ", p->status);
+    fprintf(logFile, "Priority: %zu \t ", p->priority);
+    fprintf(logFile, "Arrival time: %zu \t ", p->arrival);
+    fprintf(logFile, "Runtime: %zu \t ", p->runtime);
+    fprintf(logFile, "Remaining time: %zu \t ", p->remaining);
+    fprintf(logFile, "Waiting time: %zu \t \n", p->waiting);
     fflush(logFile);
   }
-  fprintf(logFile, "\n");
+  fprintf(logFile, "---------------------------------");
   fflush(logFile);
 }
 
@@ -212,7 +218,7 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, cleanResources);
 
   initClk();
-  initPCB(1);
+  initPCB(100);
 
   int algorithm = argv[1][0] - '0';
 
@@ -256,13 +262,14 @@ int main(int argc, char *argv[]) {
       msgqBuffer.p.pid = processPid;
 
       process *pcbProcessEntry = pcb_insert(&msgqBuffer.p);
-      pcb_log(pcbLogFile);
       currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);
     }
 
     currentClk = getClk();
 
     if (currentClk > previousClk) {
+      pcb_log(pcbLogFile);
+
       previousClk = currentClk;
 
       pcb_update();
@@ -271,23 +278,9 @@ int main(int argc, char *argv[]) {
 
       if (mustPreempt) {
         preemptProcess(runningProcess);
-
         process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
-
-        // fprintf(pFile, "here\n");
-        // fflush(pFile);
-
         resumeProcess(nextProcess);
       }
-
-      int runningProcessId = -1;
-      if (runningProcess != NULL) {
-        runningProcessId = runningProcess->id;
-      } else {
-        runningProcessId = -1;
-      }
-      fprintf(pFile, "New clock, now at %d, currently running process is %d\n", currentClk, runningProcessId);
-      fflush(pFile);
     }
   }
 

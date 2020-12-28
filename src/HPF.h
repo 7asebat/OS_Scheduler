@@ -9,7 +9,7 @@ int HPF_insertProcess(void *ds, process *p) {
 
 bool HPF_mustPreempt(void *ds) {
   pqueue *pq = (pqueue *)(ds);
-  return runningProcess == NULL || runningProcess->status == STATUS_WAITING;
+  return (runningProcess == NULL) || (runningProcess->status == STATUS_WAITING);
 }
 
 process *HPF_getNextProcess(void *ds) {

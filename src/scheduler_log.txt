@@ -1,18 +1,37 @@
 Scheduler loaded
-New clock, now at 1, currently running process is -1
 Process received at clock 1, id is 1
 At time 2 process 1 started arr 1 total 8 remain 8 wait 1
-New clock, now at 2, currently running process is 1
-New clock, now at 3, currently running process is 1
-New clock, now at 4, currently running process is 1
-New clock, now at 5, currently running process is 1
-New clock, now at 6, currently running process is 1
-New clock, now at 7, currently running process is 1
+id = 1 status = 1 
+nextProcess 0x56122273b610 id = 1 status = 1 
+PCB 0x561222738670 id = 1 status = 1 
 Process received at clock 7, id is 2
-New clock, now at 8, currently running process is 1
-New clock, now at 9, currently running process is 1
-New clock, now at 10, currently running process is 1
-New clock, now at 10, currently running process is 1
-At time 10 process 1 finished arr 1 total 8 remain 0 wait 1 TA 0 WTA 0
-At time 11 process 2 started arr 7 total 29 remain 29 wait 3
-At time 40 process 2 finished arr 7 total 29 remain 29 wait 4 TA 0 WTA 0
+At time 10 process 1 finished arr 1 total 8 remain 1 wait 1 TA 0 WTA 0
+At time 10 process 2 started arr 7 total 29 remain 29 wait 3
+id = 2 status = 1 
+nextProcess 0x56122273b660 id = 2 status = 1 
+PCB 0x561222738670 id = 2 status = 1 
+Process received at clock 16, id is 3
+Process received at clock 25, id is 4
+Process received at clock 29, id is 5
+Process received at clock 33, id is 6
+At time 39 process 2 finished arr 7 total 29 remain 1 wait 3 TA 0 WTA 0
+At time 39 process 6 started arr 33 total 2 remain 2 wait 6
+id = 6 status = 1 
+nextProcess 0x56122273bb60 id = 6 status = 1 
+PCB 0x561222738670 id = 3 status = 0 
+At time 41 process 6 finished arr 33 total 2 remain 1 wait 6 TA 0 WTA 0
+At time 41 process 5 started arr 29 total 18 remain 18 wait 12
+id = 5 status = 1 
+nextProcess 0x56122273bb10 id = 5 status = 1 
+PCB 0x561222738670 id = 3 status = 0 
+At time 59 process 5 finished arr 29 total 18 remain 1 wait 12 TA 0 WTA 0
+At time 59 process 3 started arr 16 total 18 remain 18 wait 43
+id = 3 status = 1 
+nextProcess 0x56122273b610 id = 3 status = 1 
+PCB 0x561222738670 id = 3 status = 1 
+At time 77 process 3 finished arr 16 total 18 remain 1 wait 43 TA 0 WTA 0
+At time 77 process 4 started arr 25 total 11 remain 11 wait 52
+id = 4 status = 1 
+nextProcess 0x56122273bac0 id = 4 status = 1 
+PCB 0x561222738670 id = 4 status = 1 
+At time 88 process 4 finished arr 25 total 11 remain 0 wait 52 TA 0 WTA 0

@@ -4,10 +4,6 @@
 int remainingtime;
 
 int main(int argc, char* argv[]) {
-  FILE* pFile = fopen("process_log.txt", "w");
-  fprintf(pFile, "process with pid = %d entered\n", getpid());
-  fflush(pFile);
-
   remainingtime = atoi(argv[1]);
 
   initClk();
@@ -23,6 +19,6 @@ int main(int argc, char* argv[]) {
   }
 
   destroyClk(false);
-
+  exit(0);
   return 0;
 }
