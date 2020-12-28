@@ -127,8 +127,8 @@ int createProcess(process *p) {
   int processPid = fork();
 
   if (processPid == 0) {
+    raise(SIGSTOP);
     char pRemainingTime[10];
-
     sprintf(pRemainingTime, "%zu", p->remaining);
     execl("process.out", "process.out", pRemainingTime, (char *)NULL);
   }
@@ -149,7 +149,9 @@ void terminatedProcessHandler(int SIGNUM) {
 
   currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
 
-  pcb_remove(p);
+  fprintf(pFile, "here\n");
+  fflush(pFile);
+
   fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
           getClk(),
           p->id,
@@ -161,6 +163,8 @@ void terminatedProcessHandler(int SIGNUM) {
           (size_t)0);
   fflush(pFile);
 
+  pcb_remove(p);
+  runningProcess = NULL;
   signal(SIGCHLD, terminatedProcessHandler);
 }
 
@@ -260,9 +264,18 @@ int main(int argc, char *argv[]) {
     currentClk = getClk();
 
     if (currentClk > previousClk) {
-      fprintf(pFile, "New clock, now at %d\n", currentClk);
+      int runningProcessId = -1;
+      if (runningProcess != NULL) {
+        runningProcessId = runningProcess->id;
+      } else {
+        runningProcessId = -1;
+      }
+
+      fprintf(pFile, "New clock, now at %d, currently running process is %d\n", currentClk, runningProcessId);
       fflush(pFile);
       previousClk = currentClk;
+
+      pcb_update();
 
       bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
 
@@ -270,6 +283,10 @@ int main(int argc, char *argv[]) {
         preemptProcess(runningProcess);
 
         process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+
+        fprintf(pFile, "here\n");
+        fflush(pFile);
+
         resumeProcess(nextProcess);
       }
     }
