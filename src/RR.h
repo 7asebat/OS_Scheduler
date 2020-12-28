@@ -92,3 +92,4 @@ int RR_init(schedulingAlgorithm *runningAlgorithm) {
   return 0;
 }
 
+#endif
