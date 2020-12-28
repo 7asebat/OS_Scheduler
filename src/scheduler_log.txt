@@ -1,17 +1,25 @@
 Scheduler loaded
-New clock, now at 1
+New clock, now at 1, currently running process is -1
+here
 Process received at clock 1, id is 1
-New clock, now at 2
-At time 2 process 1 started arr 1 total 8 remain 8 wait 0
-New clock, now at 3
-New clock, now at 4
-New clock, now at 5
-New clock, now at 6
-New clock, now at 7
+New clock, now at 2, currently running process is -1
+here
+At time 2 process 1 started arr 1 total 8 remain 8 wait 1
+New clock, now at 3, currently running process is 1
+New clock, now at 4, currently running process is 1
+New clock, now at 5, currently running process is 1
+New clock, now at 6, currently running process is 1
+New clock, now at 7, currently running process is 1
 Process received at clock 7, id is 2
-New clock, now at 8
-New clock, now at 9
-At time 9 process 2 finished arr 7 total 29 remain 29 wait 0 TA 0 WTA 0
-New clock, now at 10
-New clock, now at 11
-New clock, now at 12
+New clock, now at 8, currently running process is 1
+New clock, now at 9, currently running process is 1
+New clock, now at 10, currently running process is 1
+here
+At time 10 process 1 finished arr 1 total 16 remain 0 wait 1 TA 0 WTA 0
+New clock, now at 11, currently running process is -1
+here
+At time 11 process 1 resumed arr 94012355940368 total 13 remain 3 wait 1
+At time 11 process 1 resumed arr 94012355940368 total 13 remain 3 wait 1
+here
+At time 40 process 2 finished arr 7 total 29 remain 29 wait 4 TA 0 WTA 0
+here
