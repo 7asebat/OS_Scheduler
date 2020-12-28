@@ -161,48 +161,18 @@ int pqueue_remove(pqueue *queue, process *process) {
   return -1;
 }
 
-// void pqueue_printTop(pqueue *pqueue)
-// {
-//   printf("%d\n", pqueue_front(pqueue)->priority);
-// }
-/* Test code for pq
-void pqueue_print(pqueue *pq) {
-  for (int i = 0; i < pq->size; i++) {
-    printf("%d ", pq->buffer[i]->priority);
-  }
-  printf("\n");
+/**
+ * Frees the buffer allocated by the queue and resets data.
+ * @return -1 on failure, 0 on success.
+ */
+int pqueue_free(pqueue *queue) {
+  if (!queue)
+    return -1;
+  if (!queue->buffer)
+    return -1;
+
+  free(queue->buffer);
+  return 0;
 }
 
-int main() {
-  pqueue *pq = (pqueue *)malloc(sizeof(pqueue));
-  pqueue_create(pq, 100, pqueue_pcompare);
-
-  process *p[10];
-  for (int i = 0; i < 10; i++) {
-    p[i] = (process *)malloc(sizeof(process));
-    p[i]->pid = i;
-    p[i]->priority = i;
-  }
-
-  pqueue_enqueue(pq, p[5]);
-  pqueue_print(pq);
-  pqueue_enqueue(pq, p[3]);
-  pqueue_print(pq);
-  pqueue_enqueue(pq, p[7]);
-  pqueue_print(pq);
-  pqueue_enqueue(pq, p[8]);
-  pqueue_print(pq);
-  pqueue_enqueue(pq, p[2]);
-  pqueue_print(pq);
-
-  pqueue_remove(pq, p[7]);
-  pqueue_print(pq);
-
-  pqueue_remove(pq, p[2]);
-  pqueue_print(pq);
-
-  pqueue_remove(pq, p[5]);
-  pqueue_print(pq);
-}
-*/
 #endif

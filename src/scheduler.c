@@ -1,9 +1,9 @@
 #include <signal.h>
 
+#include "headers.h"
 #include "HPF.h"
 #include "RR.h"
 #include "SRTN.h"
-#include "headers.h"
 
 typedef struct
 {
@@ -103,9 +103,7 @@ void preemptProcess(process *p) {
 
 void resumeProcess(process *p) {
   runningProcess = p;
-  if (p == NULL)
-    return;
-  }
+  if (p == NULL) return;
 
   int pid = p->pid;
   p->status = STATUS_RUNNING;
@@ -287,3 +285,5 @@ int main(int argc, char *argv[]) {
   }
 
   destroyClk(true);
+  return 0;
+}

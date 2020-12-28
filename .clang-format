@@ -2,6 +2,7 @@ BasedOnStyle: google
 ColumnLimit: 0
 
 IndentWidth: 2
+IndentCaseLabels: false
 
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 2

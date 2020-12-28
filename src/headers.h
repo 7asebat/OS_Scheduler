@@ -75,7 +75,6 @@ void destroyClk(bool terminateAll) {
 }
 
 typedef struct process {
-  size_t PCB_idx;
   size_t arrival;
   size_t runtime;
 
