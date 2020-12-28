@@ -96,8 +96,10 @@ void preemptProcess(process *p) {
 }
 
 void resumeProcess(process *p) {
-  if (p == NULL)
+  if (p == NULL) {
+    runningProcess = p;
     return;
+  }
 
   int PCB_idx = p->PCB_idx;
 
@@ -144,7 +146,6 @@ void terminatedProcessHandler(int SIGNUM) {
     int exit_code = WEXITSTATUS(process_status);
     printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
   }
-
   process *p = pcb_getProcessByPID(exitedProcessPid);
 
   currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
@@ -160,6 +161,7 @@ void terminatedProcessHandler(int SIGNUM) {
           (size_t)0,
           (size_t)0);
   fflush(pFile);
+  runningProcess = NULL;
 
   signal(SIGCHLD, terminatedProcessHandler);
 }
@@ -194,6 +196,7 @@ int main(int argc, char *argv[]) {
   fprintf(pFile, "Scheduler loaded\n");
   fflush(pFile);
 
+  // signal(SIGCHLD, terminatedProcessHandler);
   struct sigaction act;
 
   act.sa_handler = terminatedProcessHandler;
@@ -205,7 +208,6 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  // signal(SIGCHLD, terminatedProcessHandler);
   signal(SIGINT, cleanResources);
 
   initClk();
@@ -270,6 +272,7 @@ int main(int argc, char *argv[]) {
         preemptProcess(runningProcess);
 
         process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+
         resumeProcess(nextProcess);
       }
     }

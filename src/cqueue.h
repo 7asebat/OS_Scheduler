@@ -118,8 +118,8 @@ process *cqueue_backDequeue(cqueue *queue) {
   if (!queue->occupied) return NULL;
 
   // Remove back element
-  process *p = queue->buffer[queue->back];
   queue->back = (queue->back + queue->SIZE - 1) % queue->SIZE;  // Move forward circularly
+  process *p = queue->buffer[queue->back];
   queue->occupied = queue->occupied ? queue->occupied - 1 : 0;
 
   return p;

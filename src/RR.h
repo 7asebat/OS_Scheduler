@@ -20,17 +20,20 @@ int RR_insertProcess(void *ds, process *p) {
  * until the quanta is reached.
  * @return true if the process should be preempted
  */
-size_t RR_remainingTime = 0;
-size_t RR_quanta = 0;
+const size_t RR_quanta = 30;
+size_t RR_remainingTime = RR_quanta;
 bool RR_mustPreempt(void *ds) {
+  if (runningProcess == NULL) {
+    RR_remainingTime = RR_quanta;
+    return true;
+  }
   cqueue *queue = (cqueue *)ds;
 
-  if (!RR_remainingTime) {
+  if (!--RR_remainingTime) {
     RR_remainingTime = RR_quanta;
     return true;
   }
 
-  RR_remainingTime--;
   return false;
 }
 
@@ -43,7 +46,6 @@ bool RR_mustPreempt(void *ds) {
 process *RR_getNextProcess(void *ds) {
   cqueue *queue = (cqueue *)ds;
 
-  // Dequeue current process and enqueue next process
   process *p = cqueue_dequeue(queue);
   if (!p) return NULL;
   cqueue_enqueue(queue, p);
