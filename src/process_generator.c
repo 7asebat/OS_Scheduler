@@ -10,7 +10,7 @@ int selectedAlgorithm;
 pid_t clkPid, schedulerPid;
 
 void parseInput(char *fn) {
-  FILE *iFile = fopen("../input/processes.txt", "r");
+  FILE *iFile = fopen("input/processes.txt", "r");
   if (iFile == NULL) {
     perror("Error opening the input file");
     exit(1);
@@ -49,7 +49,7 @@ void startProcesses() {
     exit(1);
   }
   if (clkPid == 0) {
-    execl("../bin/clk.out", "clk.out", (char *)NULL);
+    execl("bin/clk.out", "clk.out", (char *)NULL);
   } else {
     schedulerPid = fork();
     if (schedulerPid < 0) {
@@ -60,7 +60,7 @@ void startProcesses() {
       char selectedAlgorithmChar[5];
       sprintf(selectedAlgorithmChar, "%d", selectedAlgorithm);
       printf("forking scheduler.out now\n");
-      execl("../bin/scheduler.out", "scheduler.out", selectedAlgorithmChar, (char *)NULL);
+      execl("bin/scheduler.out", "scheduler.out", selectedAlgorithmChar, (char *)NULL);
     }
   }
 }

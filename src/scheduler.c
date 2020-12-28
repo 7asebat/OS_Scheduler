@@ -134,7 +134,7 @@ int createProcess(process *p) {
     raise(SIGSTOP);
     char pRemainingTime[10];
     sprintf(pRemainingTime, "%zu", p->remaining);
-    execl("../bin/process.out", "process.out", pRemainingTime, (char *)NULL);
+    execl("bin/process.out", "process.out", pRemainingTime, (char *)NULL);
   }
 
   return processPid;
@@ -198,8 +198,8 @@ void pcb_log(FILE *logFile) {
 }
 
 int main(int argc, char *argv[]) {
-  pcbLogFile = fopen("../logs/pcb_log.txt", "w");
-  pFile = fopen("../logs/scheduler_log.txt", "w");
+  pcbLogFile = fopen("logs/pcb_log.txt", "w");
+  pFile = fopen("logs/scheduler_log.txt", "w");
   fprintf(pFile, "Scheduler loaded\n");
   fflush(pFile);
 

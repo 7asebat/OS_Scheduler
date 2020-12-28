@@ -18,7 +18,7 @@ void cleanup(int signum) {
 
 /* This file represents the system clock for ease of calculations */
 int main(int argc, char *argv[]) {
-  FILE *pFile = fopen("../logs/clk_log.txt", "w");
+  FILE *pFile = fopen("logs/clk_log.txt", "w");
 
   printf("Clock starting\n");
   signal(SIGINT, cleanup);
