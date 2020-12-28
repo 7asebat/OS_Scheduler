@@ -134,7 +134,7 @@ int createProcess(process *p) {
     raise(SIGSTOP);
     char pRemainingTime[10];
     sprintf(pRemainingTime, "%zu", p->remaining);
-    execl("process.out", "process.out", pRemainingTime, (char *)NULL);
+    execl("../bin/process.out", "process.out", pRemainingTime, (char *)NULL);
   }
 
   return processPid;
