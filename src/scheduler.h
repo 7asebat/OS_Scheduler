@@ -12,13 +12,23 @@ schedulingAlgorithm currentAlgorithm;
 FILE *log_scheduler;
 FILE *log_memory;
 FILE *log_pcb;
-FILE *log_sch;  // DEBUG
+FILE *log_sch;
 
 void scheduler_checkContextSwitch();
 
 void scheduler_cleanup(int SIGNUM) {
   fclose(log_scheduler);
   fclose(log_pcb);
+  fclose(log_memory);
+  fclose(log_sch);
+
+  pcb_free();
+
+  int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
+  msgctl(msgqId, IPC_RMID, (struct msqid_ds *)0);
+
+  destroyClk(false);
+
   signal(SIGINT, scheduler_cleanup);
 }
 
@@ -69,8 +79,6 @@ void scheduler_resumeProcess(process *p) {
   fprintf(log_sch, "[%d]\t%zu %s\tREM (%zu)\n",
           getClk(), p->id, started ? "START " : "RESUME", p->remaining);
   fflush(log_sch);
-
-  // TODO: resume context of process
 }
 
 void scheduler_processTerminationHandler(int SIGNUM) {

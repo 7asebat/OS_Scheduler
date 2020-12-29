@@ -21,11 +21,6 @@ int main(int argc, char* argv[]) {
   signal(SIGTSTP, sleepHandler);
   signal(SIGCONT, wakeHandler);
 
-  char logFileName[100];
-  sprintf(logFileName, "logs/process_%d.log", (int)getpid());
-
-  logFile = fopen(logFileName, "w");
-
   initClk();
   startTime = getClk();
   runTime = atoi(argv[1]);

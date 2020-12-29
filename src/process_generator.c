@@ -109,6 +109,7 @@ int main(int argc, char *argv[]) {
       if (sendVal == -1) {
         perror("Error in sending message");
       }
+      free(temp);
     }
   }
   printf("Waiting for scheduler to finish\n");

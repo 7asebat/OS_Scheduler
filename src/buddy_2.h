@@ -5,6 +5,11 @@ unsigned int* n_slots;
 
 /* Math utilities */
 
+/**
+ * Computes the next power of 2 of n
+ * @param n
+ * @return The next power of 2 of n
+ */
 unsigned int __nextPowerOf2(unsigned int n) {
   unsigned count = 0;
 
@@ -19,6 +24,11 @@ unsigned int __nextPowerOf2(unsigned int n) {
   return 1 << count;
 }
 
+/**
+ * Returns the log2 of a power of two
+ * @param n The number to get the log2 of
+ * @return The log2 of n
+ */
 unsigned int __logOfPower2(unsigned int n) {
   unsigned count = 0;
   while (n != 0) {
@@ -31,6 +41,13 @@ unsigned int __logOfPower2(unsigned int n) {
 
 /* Slots */
 
+/**
+ * Initializes the slots of the buddy
+ * @param size The total size of the buddy memory block
+ * @param _slots Reference to the slots array
+ * @param _n_slots Reference to the n_slots array
+ * @return 0 on success, -1 on failure
+ */
 int __init_slots(int size, unsigned int*** _slots, unsigned int** _n_slots) {
   unsigned int slotsNum = __logOfPower2(size) + 1;
 
@@ -77,9 +94,12 @@ int __init_slots(int size, unsigned int*** _slots, unsigned int** _n_slots) {
 }
 
 /**
+ * Inserts a value into a certain slot
+ * @param slotIdx the index of the slot to insert into
+ * @param val the value to be inserted
  * @return index inserted at on sucess, -1 on failure
  */
-int __slot_insert(int slotIdx, int val) {
+int __slot_insert(unsigned int slotIdx, int val) {
   if (slotIdx < 0)
     return -1;
 
@@ -100,7 +120,13 @@ int __slot_insert(int slotIdx, int val) {
   return i;
 }
 
-int __slot_remove(int slotIdx, int elemIdx) {
+/**
+ * Removes an element from a slot
+ * @param slotIdx the slot to remove the element from
+ * @param elemIdx the index of the element to be removed from the slot
+ * @return 0 on success, -1 on failure
+ */
+int __slot_remove(unsigned int slotIdx, unsigned int elemIdx) {
   if (elemIdx >= n_slots[slotIdx])  // Invalid idx
     return -1;
 
@@ -115,7 +141,13 @@ int __slot_remove(int slotIdx, int elemIdx) {
 
 /* Buddy Helpers */
 
-int __buddy_split(int slotIdx) {
+/**
+ * Splits the first block of memory of slotIdx
+ * If it does not have any, recursively split up
+ * @param slotIdx unsigned integer representing the index of slots to split
+ * @return 0 on success, -1 on failure
+ */
+int __buddy_split(unsigned int slotIdx) {
   if (slotIdx == 0)
     return -1;
 
@@ -247,50 +279,3 @@ void buddy_print(unsigned int size) {
 
   return;
 }
-
-/*
-int main() {
-  buddy_init(128);
-
-  int pos[10];
-
-  pos[0] = buddy_allocate(20);
-  buddy_print(128);
-
-  pos[1] = buddy_allocate(15);
-  buddy_print(128);
-
-  pos[2] = buddy_allocate(10);
-  buddy_print(128);
-
-  pos[3] = buddy_allocate(25);
-  buddy_print(128);
-
-  buddy_free(pos[0], 20);
-  buddy_print(128);
-
-  buddy_free(pos[2], 10);
-  buddy_print(128);
-
-  pos[4] = buddy_allocate(8);
-  buddy_print(128);
-
-  pos[5] = buddy_allocate(30);
-  buddy_print(128);
-
-  buddy_free(pos[1], 15);
-  buddy_print(128);
-
-  pos[6] = buddy_allocate(15);
-  buddy_print(128);
-
-  buddy_free(pos[4], 8);
-  buddy_print(128);
-
-  buddy_free(pos[5], 30);
-  buddy_print(128);
-
-  buddy_free(pos[1], 15);
-  buddy_print(128);
-}
-*/
