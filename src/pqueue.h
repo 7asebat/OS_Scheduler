@@ -17,6 +17,13 @@ typedef struct pqueue {
 
 pqueue PRIORITY_QUEUE_DEFAULT = {0, 0, NULL, NULL};
 
+void pqueue_print(pqueue *pq) {
+  for (int i = 0; i < pq->size; i++) {
+    printf("%zu ", pq->buffer[i]->priority);
+  }
+  printf("\n");
+}
+
 /**
  * Swaps two processes passed in by pointer
  * @param l first process
@@ -86,23 +93,44 @@ void __pqueue_reheapUp(pqueue *queue) {
 void __pqueue_reheapDown(pqueue *queue, int i) {
   size_t *size = &queue->size;
 
-  while (i < *size) {
-    if (L_CHILD(i) < *size && R_CHILD(i) < *size) {
-      if (queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[R_CHILD(i)]) && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i]))
-      // if l_child < r_child , swap i with l_child
-      {
+  bool leftChildCan = L_CHILD(i) < *size && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i]);
+  bool rightChildCan = R_CHILD(i) < *size && queue->compare(queue->buffer[R_CHILD(i)], queue->buffer[i]);
+
+  while (i < *size && (leftChildCan || rightChildCan)) {
+    if (leftChildCan && rightChildCan) {
+      if (queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[R_CHILD(i)])) {
         __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
         i = L_CHILD(i);
-      } else if (queue->compare(queue->buffer[R_CHILD(i)], queue->buffer[i])) {
+      } else {
         __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
         i = R_CHILD(i);
       }
-    } else if (L_CHILD(i) < *size && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i])) {
-      __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
     } else {
-      break;
+      __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
+      i = L_CHILD(i);
     }
+
+    leftChildCan = L_CHILD(i) < *size && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i]);
+    rightChildCan = R_CHILD(i) < *size && queue->compare(queue->buffer[R_CHILD(i)], queue->buffer[i]);
   }
+
+  // while (i < *size) {
+  //   if (L_CHILD(i) < *size && R_CHILD(i) < *size) {
+  //     if (queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[R_CHILD(i)]) && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i]))
+  //     // if l_child < r_child , swap i with l_child
+  //     {
+  //       __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
+  //       i = L_CHILD(i);
+  //     } else if (queue->compare(queue->buffer[R_CHILD(i)], queue->buffer[i])) {
+  //       __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
+  //       i = R_CHILD(i);
+  //     }
+  //   } else if (L_CHILD(i) < *size && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i])) {
+  //     __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
+  //   } else {
+  //     break;
+  //   }
+  // }
 }
 
 /**
