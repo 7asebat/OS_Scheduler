@@ -71,8 +71,8 @@ int pqueue_create(pqueue *queue, size_t capacity, bool (*compare)(process *, pro
 
 /**
  * Returns top of the queue
- * @param{PriorityQueue*} Priority queue object
- * @return{process*} The process at the top of the queue
+ * @param queue Reference to a priority queue object
+ * @return Pointer to the process at the top of the queue
  */
 process *pqueue_front(pqueue *queue) {
   if (queue->size == 0)
@@ -101,14 +101,17 @@ void __pqueue_reheapDown(pqueue *queue, int i) {
       if (queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[R_CHILD(i)])) {
         __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
         i = L_CHILD(i);
-      } else {
+      }
+      else {
         __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
         i = R_CHILD(i);
       }
-    } else if (leftChildCan) {
+    }
+    else if (leftChildCan) {
       __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
       i = L_CHILD(i);
-    } else {
+    }
+    else {
       __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
       i = R_CHILD(i);
     }
