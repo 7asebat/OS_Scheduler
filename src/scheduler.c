@@ -5,16 +5,20 @@ int main(int argc, char *argv[]) {
   int msgqId;
   scheduler_init(algorithm, &msgqId);
 
-  int msgqENO;
   msgBuf msgqBuffer;
   msgqBuffer.mtype = 1;  // Dummy val
   int currentClk, previousClk = -1;
 
   while (1) {
     currentClk = getClk();
-    if (scheduler_getMessage(msgqId, &msgqBuffer, currentClk)) {
+    if (scheduler_getMessage(msgqId, &msgqBuffer)) {
+      // No process was received
     } else {
-      scheduler_createProcess(&msgqBuffer, currentClk);
+      scheduler_createProcess(&msgqBuffer);
+
+      if (currentClk > previousClk) {
+        pcb_update();
+      }
 
       if (currentClk > previousClk) {
         pcb_update();

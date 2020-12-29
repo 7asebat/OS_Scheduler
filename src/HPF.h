@@ -28,10 +28,10 @@ int HPF_init(schedulingAlgorithm *runningAlgorithm) {
 
   schedulingAlgorithm sa = {
     queue,
-    &HPF_insertProcess,
-    &HPF_mustPreempt,
-    &HPF_getNextProcess,
-    &HPF_removeProcess,
+    HPF_insertProcess,
+    HPF_mustPreempt,
+    HPF_getNextProcess,
+    HPF_removeProcess,
   };
 
   *runningAlgorithm = sa;
@@ -39,3 +39,4 @@ int HPF_init(schedulingAlgorithm *runningAlgorithm) {
 }
 
 #endif
+
