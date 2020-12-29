@@ -13,7 +13,8 @@ int main(int argc, char *argv[]) {
     currentClk = getClk();
     if (scheduler_getMessage(msgqId, &msgqBuffer)) {
       // No process was received
-    } else {
+    }
+    else {
       scheduler_createProcess(&msgqBuffer);
 
       if (currentClk > previousClk) {

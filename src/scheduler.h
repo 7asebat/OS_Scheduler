@@ -8,16 +8,27 @@
 #include "pcb.h"
 
 schedulingAlgorithm currentAlgorithm;
-FILE *pFile;
-FILE *pcbLogFile;
-FILE *schLog;  // DEBUG
+FILE *log_scheduler;
+FILE *log_memory;
+FILE *log_pcb;
+FILE *log_sch;
 
 void scheduler_checkContextSwitch();
 
-void cleanResources(int SIGNUM) {
-  fclose(pFile);
-  fclose(pcbLogFile);
-  signal(SIGINT, cleanResources);
+void scheduler_cleanup(int SIGNUM) {
+  fclose(log_scheduler);
+  fclose(log_pcb);
+  fclose(log_memory);
+  fclose(log_sch);
+
+  pcb_free();
+
+  int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
+  msgctl(msgqId, IPC_RMID, (struct msqid_ds *)0);
+
+  destroyClk(false);
+
+  signal(SIGINT, scheduler_cleanup);
 }
 
 void scheduler_preemptProcess(process *p) {
@@ -66,9 +77,7 @@ void scheduler_resumeProcess(process *p) {
 
   fprintf(schLog, "[%d]\t%zu %s\tREM (%zu)\n",
           getClk(), p->id, started ? "START " : "RESUME", p->remaining);
-  fflush(schLog);
-
-  // TODO: resume context of process
+  fflush(log_sch);
 }
 
 void terminatedProcessHandler(int SIGNUM) {

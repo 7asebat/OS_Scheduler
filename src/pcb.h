@@ -78,9 +78,16 @@ void pcb_update() {
   }
 }
 
+void pcb_free() {
+  for (int i = 0; i < PCB.used; i++)
+    free(PCB.array[i]);
+
+  free(PCB.array);
+}
+
 void pcb_log(FILE *logFile) {
   // Previous clock has finished
-  fprintf(logFile, "------------------------------------------------------------------\n[%d]\n", getClk()-1);
+  fprintf(logFile, "------------------------------------------------------------------\n[%d]\n", getClk() - 1);
   for (int i = 0; i < PCB.used; i++) {
     process *p = PCB.array[i];
     fprintf(logFile, "ID\t%zu\t", p->id);
