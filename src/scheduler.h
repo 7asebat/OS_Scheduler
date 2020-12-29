@@ -4,20 +4,22 @@
 #include "HPF.h"
 #include "RR.h"
 #include "SRTN.h"
+#include "buddy.h"
 #include "headers.h"
 #include "pcb.h"
 
 schedulingAlgorithm currentAlgorithm;
-FILE *pFile;
-FILE *pcbLogFile;
-FILE *schLog;  // DEBUG
+FILE *log_scheduler;
+FILE *log_memory;
+FILE *log_pcb;
+FILE *log_sch;  // DEBUG
 
 void scheduler_checkContextSwitch();
 
-void cleanResources(int SIGNUM) {
-  fclose(pFile);
-  fclose(pcbLogFile);
-  signal(SIGINT, cleanResources);
+void scheduler_cleanup(int SIGNUM) {
+  fclose(log_scheduler);
+  fclose(log_pcb);
+  signal(SIGINT, scheduler_cleanup);
 }
 
 void scheduler_preemptProcess(process *p) {
@@ -27,18 +29,18 @@ void scheduler_preemptProcess(process *p) {
   int pid = p->pid;
   p->status = STATUS_WAITING;
   kill(pid, SIGTSTP);
-  fprintf(pFile, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
+  fprintf(log_scheduler, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
           getClk(),
           p->id,
           p->arrival,
           p->runtime,
           p->remaining,
           p->waiting);
-  fflush(pFile);
+  fflush(log_scheduler);
 
-  fprintf(schLog, "[%d]\t%zu STOP  \tREM (%zu)\n",
+  fprintf(log_sch, "[%d]\t%zu STOP  \tREM (%zu)\n",
           getClk(), p->id, p->remaining);
-  fflush(schLog);
+  fflush(log_sch);
 
   // TODO: store context of process
 }
@@ -54,7 +56,7 @@ void scheduler_resumeProcess(process *p) {
 
   bool started = (p->remaining == p->runtime);
 
-  fprintf(pFile, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
+  fprintf(log_scheduler, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
           getClk(),
           p->id,
           (started) ? "started" : "resumed",
@@ -62,16 +64,16 @@ void scheduler_resumeProcess(process *p) {
           p->runtime,
           p->remaining,
           p->waiting);
-  fflush(pFile);
+  fflush(log_scheduler);
 
-  fprintf(schLog, "[%d]\t%zu %s\tREM (%zu)\n",
+  fprintf(log_sch, "[%d]\t%zu %s\tREM (%zu)\n",
           getClk(), p->id, started ? "START " : "RESUME", p->remaining);
-  fflush(schLog);
+  fflush(log_sch);
 
   // TODO: resume context of process
 }
 
-void terminatedProcessHandler(int SIGNUM) {
+void scheduler_processTerminationHandler(int SIGNUM) {
   int process_status;
 
   int exitedProcessPid = wait(&process_status);
@@ -86,7 +88,7 @@ void terminatedProcessHandler(int SIGNUM) {
   size_t TA = getClk() - p->arrival;
   double WTA = TA / (double)p->runtime;
 
-  fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
+  fprintf(log_scheduler, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
           getClk(),
           p->id,
           p->arrival,
@@ -95,17 +97,26 @@ void terminatedProcessHandler(int SIGNUM) {
           p->waiting,
           TA,
           WTA);
-  fflush(pFile);
+  fflush(log_scheduler);
 
   // DEBUG
-  fprintf(schLog, "[%d]\t%zu FINISH\tREM (%zu)\n",
+  fprintf(log_sch, "[%d]\t%zu FINISH\tREM (%zu)\n",
           getClk(), p->id, p->remaining);
-  fflush(schLog);
+  fflush(log_sch);
 
   runningProcess = NULL;
 
-  pcb_remove(p);
+  buddy_free(p->memindex, p->memsize);
+  int memUpperbound = buddy_upperbound(p->memsize);
+  fprintf(log_memory, "At time %d freed %d bytes from process %zu from %d to %d\n",
+          getClk(),
+          memUpperbound,
+          p->id,
+          p->memindex,
+          p->memindex + memUpperbound);
+  fflush(log_memory);
 
+  pcb_remove(p);
   scheduler_checkContextSwitch();
 }
 
@@ -124,17 +135,17 @@ void scheduler_checkContextSwitch() {
  * @return msqId
  */
 int scheduler_init(int algorithm, int *msgqId_p) {
-  pcbLogFile = fopen("logs/pcb.log", "w");
-  pFile = fopen("logs/scheduler.log", "w");
-  fprintf(pFile, "Scheduler loaded\n");
-  fflush(pFile);
+  log_pcb = fopen("logs/pcb.log", "w");
+  log_memory = fopen("logs/memory.log", "w");
+  log_scheduler = fopen("logs/scheduler.log", "w");
+  fprintf(log_scheduler, "Scheduler loaded\n");
+  fflush(log_scheduler);
 
   // DEBUG
-  schLog = fopen("./logs/sch.log", "w");
-  // signal(SIGCHLD, terminatedProcessHandler);
+  log_sch = fopen("./logs/sch.log", "w");
   struct sigaction act;
 
-  act.sa_handler = terminatedProcessHandler;
+  act.sa_handler = scheduler_processTerminationHandler;
   sigemptyset(&act.sa_mask);
   act.sa_flags = SA_NOCLDSTOP;
 
@@ -143,7 +154,7 @@ int scheduler_init(int algorithm, int *msgqId_p) {
     exit(1);
   }
 
-  signal(SIGINT, cleanResources);
+  signal(SIGINT, scheduler_cleanup);
 
   initClk();
   pcb_init(100);
@@ -171,6 +182,8 @@ int scheduler_init(int algorithm, int *msgqId_p) {
 
   *msgqId_p = msgqId;
 
+  // Initialize the memory allocation system
+  buddy_init();
   return 0;
 }
 
@@ -186,7 +199,8 @@ int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer) {
       exit(-1);
     }
     return -1;
-  } else {
+  }
+  else {
     return 0;
   }
 }
@@ -195,12 +209,12 @@ int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer) {
  * Creates a new stopped process and logs its arrival.
  */
 void scheduler_createProcess(msgBuf *msgqBuffer) {
-  fprintf(pFile, "Process received at clock %d, id is %zu\n", getClk(), msgqBuffer->p.id);
-  fflush(pFile);
+  fprintf(log_scheduler, "Process received at clock %d, id is %zu\n", getClk(), msgqBuffer->p.id);
+  fflush(log_scheduler);
 
-  fprintf(schLog, "[%d]\t%zu ARRIVE\tBURST (%zu)\n",
+  fprintf(log_sch, "[%d]\t%zu ARRIVE\tBURST (%zu)\n",
           getClk(), msgqBuffer->p.id, msgqBuffer->p.runtime);
-  fflush(schLog);
+  fflush(log_sch);
 
   int processPid = fork();
   if (processPid == 0) {
@@ -213,6 +227,20 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   kill(processPid, SIGTSTP);
 
   msgqBuffer->p.pid = processPid;
+
+  int memindex = buddy_allocate(msgqBuffer->p.memsize);
+  if (memindex == -1) {
+    // handle error
+  }
+  msgqBuffer->p.memindex = memindex;
+  int memUpperbound = buddy_upperbound(msgqBuffer->p.memsize);
+  fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %d to %d\n",
+          getClk(),
+          memUpperbound,
+          msgqBuffer->p.id,
+          memindex,
+          memindex + memUpperbound);
+  fflush(log_memory);
 
   process *pcbProcessEntry = pcb_insert(&msgqBuffer->p);
   currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);

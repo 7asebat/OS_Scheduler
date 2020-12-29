@@ -19,10 +19,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-/* typedef bool short; */
-/* #define true 1 */
-/* #define false 1 */
-
 #define max(a, b) \
   ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
@@ -38,7 +34,7 @@
 #define DS_MAX_SIZE 100
 ///==============================
 //don't mess with this variable//
-int *shmaddr;  //
+int *shmaddr;                  //
 //===============================
 
 int getClk() {
@@ -60,14 +56,13 @@ void initClk() {
   shmaddr = (int *)shmat(shmid, (void *)0, 0);
 }
 
-/*
+/**
  * All process call this function at the end to release the communication
  * resources between them and the clock module.
  * Again, Remember that the clock is only emulation!
  * Input: terminateAll: a flag to indicate whether that this is the end of simulation.
  *                      It terminates the whole system and releases resources.
-*/
-
+ */
 void destroyClk(bool terminateAll) {
   shmdt(shmaddr);
   if (terminateAll) {
@@ -78,15 +73,16 @@ void destroyClk(bool terminateAll) {
 typedef struct process {
   size_t arrival;
   size_t runtime;
+  size_t priority;
+  size_t memsize;
 
   size_t remaining;
   size_t waiting;
 
-  size_t priority;
   size_t status;
   size_t id;
   size_t pid;
-  size_t memsize;
+  size_t memindex;
 } process;
 
 process *runningProcess = NULL;

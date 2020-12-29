@@ -1,17 +1,32 @@
 #ifndef BUDDY_H
 #define BUDDY_H
 
-typedef struct buddy_cell {
-  short occupied;
-  short next;
-} buddy_cell;
-
-buddy_cell block[1024];
+struct {
+  short occupied[1024];
+  short next[1024];
+} buddy;
 
 void buddy_init() {
   for (int i = 0; i < 1024; i++) {
-    block[i] = (buddy_cell){0, i+1024};
+    buddy.occupied[i] = 0;
+    buddy.next[i] = i + 1024;
   }
+}
+
+int buddy_upperbound(int b) {
+  // Get appropriate size
+  int ep = 0;
+
+  // Is power of two
+  if (b && !(b & (b - 1))) {
+    return b;
+  }
+  while (b) {
+    ep++;
+    b >>= 1;
+  }
+
+  return 1 << ep;
 }
 
 /**
@@ -19,37 +34,28 @@ void buddy_init() {
  */
 int buddy_allocate(int bytes) {
   // Get appropriate size
-  int size = bytes, ep = 0;
-
-  // Is power of two
-  if (bytes && !(bytes & (bytes - 1))) {
-    size = bytes;
-  }
-  else {
-    while (size) {
-      ep++;
-      size >>= 1;
-    }
-    size = 1 << ep;
-  }
+  int size = buddy_upperbound(bytes);
 
   int start = 0, next;
-  int dmin = __INT_MAX__, minimum = 0;
+  int dmin = __INT_MAX__, minimum = 1024;
 
   while (start < 1024) {
-    next = block[start].next;
-    if (block[start].occupied) {
-      if (block[start].next % size) {
+    // Next spot
+    next = buddy.next[start];
+
+    // Find next available delimiter
+    if (buddy.occupied[start]) {
+      if (buddy.next[start] % size) {
         start += size;
-      } 
+      }
       else {
-        start = block[start].next;
+        start = buddy.next[start];
       }
       continue;
     }
 
     // Found empty segment
-    next = block[start].next;
+    next = buddy.next[start];
 
     // Occupied, next is size steps afterwards
     if (next - start >= size && next - start < dmin) {
@@ -60,52 +66,37 @@ int buddy_allocate(int bytes) {
   }
 
   if (minimum < 1024) {
-    next = block[minimum].next;
+    next = buddy.next[minimum];
 
-    if (next - minimum >= size) {
-      if (!block[minimum + size].occupied) 
-        block[minimum + size].next = block[minimum].next;  // Link with old next
+    if (!buddy.occupied[minimum + size])
+      buddy.next[minimum + size] = buddy.next[minimum];  // Link with old next
 
-      block[minimum] = (buddy_cell){1, minimum + size};
-      return minimum;
-    }
+    buddy.occupied[minimum] = 1;
+    buddy.next[minimum] = minimum + size;
+    return minimum;
   }
   return -1;
 }
 
 int buddy_free(int index, int bytes) {
-  if (!block[index].occupied) return -1;
+  if (!buddy.occupied[index]) return -1;
 
   // Clear
-  block[index].occupied = 0;
+  buddy.occupied[index] = 0;
 
   // Get appropriate size
-  int size = bytes, ep = 0;
-
-  // Is power of two
-  if (bytes && !(bytes & (bytes - 1))) {
-    size = bytes;
-  }
-  else {
-    while (size) {
-      ep++;
-      size >>= 1;
-    }
-    size = 1 << ep;
-  }
+  int size = buddy_upperbound(bytes);
 
   // Check if mergable with next spot
   if (index / size % 2 == 0) {
-    if (!block[index + size].occupied) {
-      // Link with next
-      block[index] = block[index + size];
-    }
+    // Link with next
+    if (!buddy.occupied[index + size])
+      buddy.next[index] = buddy.next[index + size];
   }
   else if (index >= size) {
-    if (!block[index - size].occupied) {
-      // Link with next
-      block[index - size] = block[index];
-    }
+    // Link with next
+    if (!buddy.occupied[index - size])
+      buddy.next[index - size] = buddy.next[index];
   }
   return 0;
 }

@@ -43,8 +43,11 @@ process *pcb_insert(process *element) {
   return PCB.array[PCB.used - 1];
 }
 
-void pcb_remove(process *element) {
-  int pidToRemove = element->pid;
+/**
+ * This function also frees the memory allocated for the process.
+ */
+void pcb_remove(process *p) {
+  int pidToRemove = p->pid;
 
   process *toBeRemoved;
   for (int i = 0; i < PCB.used; i++) {

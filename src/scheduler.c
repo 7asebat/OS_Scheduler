@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
       scheduler_checkContextSwitch();
 
       if (currentClk > previousClk) {
-        pcb_log(pcbLogFile);
+        // pcb_log(pcbLogFile);
         previousClk = currentClk;
       }
     }
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     if (currentClk > previousClk) {
       pcb_update();
       scheduler_checkContextSwitch();
-      pcb_log(pcbLogFile);
+      // pcb_log(pcbLogFile);
       previousClk = currentClk;
     }
   }
