@@ -8,7 +8,7 @@
 #include "headers.h"
 #include "pcb.h"
 
-schedulingAlgorithm currentAlgorithm;
+scalgorithm currentAlgorithm;
 FILE *log_scheduler;
 FILE *log_memory;
 FILE *log_pcb;
@@ -16,8 +16,12 @@ FILE *log_sch;
 
 void scheduler_checkContextSwitch();
 
+/**
+ * Cleans up the resources allocated by the scheduler, called prior to program exit.
+ */
 void scheduler_cleanup(int SIGNUM) {
   fclose(log_scheduler);
+  fclose(log_memory);
   fclose(log_pcb);
   fclose(log_memory);
   fclose(log_sch);
@@ -27,34 +31,34 @@ void scheduler_cleanup(int SIGNUM) {
   int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   msgctl(msgqId, IPC_RMID, (struct msqid_ds *)0);
 
-  destroyClk(false);
+  clk_destroy(false);
 
   signal(SIGINT, scheduler_cleanup);
+
+  currentAlgorithm.free(currentAlgorithm.ds);
 }
 
+/**
+ * Preempts the current running process.
+ */
 void scheduler_preemptProcess(process *p) {
-  if (p == NULL)
-    return;
+  if (p == NULL) return;
 
-  int pid = p->pid;
   p->status = STATUS_WAITING;
-  kill(pid, SIGTSTP);
+  kill(p->id, SIGTSTP);
   fprintf(log_scheduler, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
-          getClk(),
+          clk_get(),
           p->id,
           p->arrival,
           p->runtime,
           p->remaining,
           p->waiting);
   fflush(log_scheduler);
-
-  fprintf(log_sch, "[%d]\t%zu STOP  \tREM (%zu)\n",
-          getClk(), p->id, p->remaining);
-  fflush(log_sch);
-
-  // TODO: store context of process
 }
 
+/**
+ * Resumes a given process
+ */
 void scheduler_resumeProcess(process *p) {
   runningProcess = p;
   if (p == NULL) return;
@@ -67,7 +71,7 @@ void scheduler_resumeProcess(process *p) {
   bool started = (p->remaining == p->runtime);
 
   fprintf(log_scheduler, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
-          getClk(),
+          clk_get(),
           p->id,
           (started) ? "started" : "resumed",
           p->arrival,
@@ -75,12 +79,13 @@ void scheduler_resumeProcess(process *p) {
           p->remaining,
           p->waiting);
   fflush(log_scheduler);
-
-  fprintf(log_sch, "[%d]\t%zu %s\tREM (%zu)\n",
-          getClk(), p->id, started ? "START " : "RESUME", p->remaining);
-  fflush(log_sch);
 }
 
+/**
+ * Is called whenever a process terminates and sends a signal to the scheduler. 
+ * Removes the process from the data structure and the process control block, 
+ * frees the memory allocated by it, and checks if context switching is necessary.
+ */
 void scheduler_processTerminationHandler(int SIGNUM) {
   int process_status;
 
@@ -91,13 +96,13 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   }
   process *p = pcb_getProcessByPID(exitedProcessPid);
 
-  currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
+  currentAlgorithm.removeProcess(currentAlgorithm.ds, p);
 
-  size_t TA = getClk() - p->arrival;
+  size_t TA = clk_get() - p->arrival;
   double WTA = TA / (double)p->runtime;
 
   fprintf(log_scheduler, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
-          getClk(),
+          clk_get(),
           p->id,
           p->arrival,
           p->runtime,
@@ -107,17 +112,12 @@ void scheduler_processTerminationHandler(int SIGNUM) {
           WTA);
   fflush(log_scheduler);
 
-  // DEBUG
-  fprintf(log_sch, "[%d]\t%zu FINISH\tREM (%zu)\n",
-          getClk(), p->id, p->remaining);
-  fflush(log_sch);
-
   runningProcess = NULL;
 
   buddy_free(p->memindex, p->memsize);
   int memUpperbound = buddy_upperbound(p->memsize);
   fprintf(log_memory, "At time %d freed %d bytes from process %zu from %d to %d\n",
-          getClk(),
+          clk_get(),
           memUpperbound,
           p->id,
           p->memindex,
@@ -128,43 +128,44 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   scheduler_checkContextSwitch();
 }
 
+/**
+ * Performs context switching if necessary, preempting the current process, 
+ * and resuming the next process in the ready queue, which is determined by 
+ * the scheduling algorithm.
+ */
 void scheduler_checkContextSwitch() {
-  bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+  bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.ds);
 
   if (mustPreempt) {
     scheduler_preemptProcess(runningProcess);
-    process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+    process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.ds);
 
     scheduler_resumeProcess(nextProcess);
   }
 }
 
 /**
+ * Initializes the scheduler and all its components
  * @return msqId
  */
 int scheduler_init(int algorithm, int *msgqId_p) {
-  log_pcb = fopen("logs/pcb.log", "w");
   log_memory = fopen("logs/memory.log", "w");
   log_scheduler = fopen("logs/scheduler.log", "w");
-  fprintf(log_scheduler, "Scheduler loaded\n");
-  fflush(log_scheduler);
 
-  // DEBUG
-  log_sch = fopen("./logs/sch.log", "w");
+  // Latch the termination handler
   struct sigaction act;
-
   act.sa_handler = scheduler_processTerminationHandler;
   sigemptyset(&act.sa_mask);
   act.sa_flags = SA_NOCLDSTOP;
-
   if (sigaction(SIGCHLD, &act, 0) == -1) {
     perror("sigaction");
     exit(1);
   }
 
+  // Latch the cleanup handler
   signal(SIGINT, scheduler_cleanup);
 
-  initClk();
+  clk_init();
   pcb_init(100);
 
   switch (algorithm) {
@@ -217,12 +218,8 @@ int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer) {
  * Creates a new stopped process and logs its arrival.
  */
 void scheduler_createProcess(msgBuf *msgqBuffer) {
-  fprintf(log_scheduler, "Process received at clock %d, id is %zu\n", getClk(), msgqBuffer->p.id);
+  fprintf(log_scheduler, "Process received at clock %d, id is %zu\n", clk_get(), msgqBuffer->p.id);
   fflush(log_scheduler);
-
-  fprintf(log_sch, "[%d]\t%zu ARRIVE\tBURST (%zu)\n",
-          getClk(), msgqBuffer->p.id, msgqBuffer->p.runtime);
-  fflush(log_sch);
 
   int processPid = fork();
   if (processPid == 0) {
@@ -233,7 +230,6 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   }
 
   kill(processPid, SIGTSTP);
-
   msgqBuffer->p.pid = processPid;
 
   int memindex = buddy_allocate(msgqBuffer->p.memsize);
@@ -242,8 +238,9 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   }
   msgqBuffer->p.memindex = memindex;
   int memUpperbound = buddy_upperbound(msgqBuffer->p.memsize);
+
   fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %d to %d\n",
-          getClk(),
+          clk_get(),
           memUpperbound,
           msgqBuffer->p.id,
           memindex,
@@ -251,7 +248,7 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   fflush(log_memory);
 
   process *pcbProcessEntry = pcb_insert(&msgqBuffer->p);
-  currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);
+  currentAlgorithm.insertProcess(currentAlgorithm.ds, pcbProcessEntry);
 }
 
 #endif

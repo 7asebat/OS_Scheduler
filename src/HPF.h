@@ -22,21 +22,30 @@ int HPF_removeProcess(void *ds, process *p) {
   return pqueue_remove(pq, p);
 }
 
-int HPF_init(schedulingAlgorithm *runningAlgorithm) {
+/**
+ * Frees the resources allocated by the HPF algorithm.
+ * @return -1 on failure, 0 on success
+ */
+int HPF_free(void *ds) {
+  pqueue *queue = (pqueue *)ds;
+  return pqueue_free(queue);
+}
+
+int HPF_init(scalgorithm *runningAlgorithm) {
+  if (!runningAlgorithm) return -1;
+
   pqueue *queue = (pqueue *)malloc(sizeof(pqueue));
   pqueue_create(queue, DS_MAX_SIZE, pqueue_pcompare);
 
-  schedulingAlgorithm sa = {
+  *runningAlgorithm = (scalgorithm) {
     queue,
     HPF_insertProcess,
     HPF_mustPreempt,
     HPF_getNextProcess,
     HPF_removeProcess,
+    HPF_free,
   };
 
-  *runningAlgorithm = sa;
   return 0;
 }
-
 #endif
-
