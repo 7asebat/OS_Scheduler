@@ -41,7 +41,7 @@ void __pqueue_swap(process **l, process **r) {
  * Used in priority queue to inclusively sort
  * @param a First process for comparison
  * @param b Second process for comparison
- * @return{char} returns comparison result, 1 if a < b, 0 elsewise
+ * @return comparison result, 1 if a < b, 0 elsewise
  */
 bool pqueue_pcompare(process *a, process *b) {
   if (a->priority < b->priority)
@@ -71,8 +71,8 @@ int pqueue_create(pqueue *queue, size_t capacity, bool (*compare)(process *, pro
 
 /**
  * Returns top of the queue
- * @param{PriorityQueue*} Priority queue object
- * @return{process*} The process at the top of the queue
+ * @param queue Priority queue object
+ * @return The process at the top of the queue
  */
 process *pqueue_front(pqueue *queue) {
   if (queue->size == 0)
@@ -101,14 +101,17 @@ void __pqueue_reheapDown(pqueue *queue, int i) {
       if (queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[R_CHILD(i)])) {
         __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
         i = L_CHILD(i);
-      } else {
+      }
+      else {
         __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
         i = R_CHILD(i);
       }
-    } else if (leftChildCan) {
+    }
+    else if (leftChildCan) {
       __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
       i = L_CHILD(i);
-    } else {
+    }
+    else {
       __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
       i = R_CHILD(i);
     }
@@ -120,8 +123,8 @@ void __pqueue_reheapDown(pqueue *queue, int i) {
 
 /**
  * Enqueues an element inside the queue
- * @param{pqueue*} Priority queue object
- * @param{process*} The process to be inserted
+ * @param queue priority queue object
+ * @param p Pointer to the process to be inserted
  * @return 0 on success, -1 on failure
  */
 int pqueue_enqueue(pqueue *queue, process *p) {
@@ -139,7 +142,7 @@ int pqueue_enqueue(pqueue *queue, process *p) {
 
 /**
  * Dequeues an element from the top of the queue
- * @param{pqueue*} Priority queue object
+ * @param queue Priority queue object
  * @return 0 on success, -1 if the queue is empty
  */
 process *pqueue_dequeue(pqueue *queue) {
