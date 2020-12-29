@@ -90,8 +90,8 @@ process *runningProcess = NULL;
 #define ALGORITHM_RR 3
 
 
-typedef struct schedulingAlgorithm {
-  void *algorithmDS;
+typedef struct scalgorithm {
+  void *ds;
 
   int (*insertProcess)(void *ds, process *p);
   bool (*mustPreempt)(void *ds);

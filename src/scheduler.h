@@ -9,9 +9,6 @@
 
 scalgorithm currentAlgorithm;
 FILE *log_scheduler;
-FILE *log_memory;
-FILE *log_pcb;
-FILE *log_sch;
 
 void scheduler_checkContextSwitch();
 
@@ -20,11 +17,6 @@ void scheduler_checkContextSwitch();
  */
 void scheduler_cleanup(int SIGNUM) {
   fclose(log_scheduler);
-  fclose(log_memory);
-  fclose(log_pcb);
-  fclose(log_memory);
-  fclose(log_sch);
-
   pcb_free();
 
   int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
@@ -109,17 +101,10 @@ void scheduler_processTerminationHandler(int SIGNUM) {
           p->waiting,
           TA,
           WTA);
-  fflush(pFile);
-
-  // DEBUG
-  fprintf(schLog, "[%d]\t%zu FINISH\tREM (%zu)\n",
-          getClk(), p->id, p->remaining);
-  fflush(schLog);
+  fflush(log_scheduler);
 
   runningProcess = NULL;
-
   pcb_remove(p);
-
   scheduler_checkContextSwitch();
 }
 
@@ -144,17 +129,10 @@ void scheduler_checkContextSwitch() {
  * @return msqId
  */
 int scheduler_init(int algorithm, int *msgqId_p) {
-  pcbLogFile = fopen("logs/pcb.log", "w");
-  pFile = fopen("logs/scheduler.log", "w");
-  fprintf(pFile, "Scheduler loaded\n");
-  fflush(pFile);
+  log_scheduler = fopen("logs/scheduler.log", "w");
 
-  // DEBUG
-  schLog = fopen("./logs/sch.log", "w");
-  // signal(SIGCHLD, terminatedProcessHandler);
   struct sigaction act;
-
-  act.sa_handler = terminatedProcessHandler;
+  act.sa_handler = scheduler_processTerminationHandler;
   sigemptyset(&act.sa_mask);
   act.sa_flags = SA_NOCLDSTOP;
   if (sigaction(SIGCHLD, &act, 0) == -1) {
