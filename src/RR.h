@@ -32,7 +32,10 @@ bool RR_mustPreempt(void *ds) {
   cqueue *queue = (cqueue *)ds;
   if (clk - RR_start == RR_quanta) {
     RR_start = clk;
-    return queue->occupied > 1;
+
+    // Don't preempt the process if it's terminating
+    // Don't preempt the process if it's the only one left
+    return queue->occupied > 1 && runningProcess->remaining > 0;
   }
 
   return false;

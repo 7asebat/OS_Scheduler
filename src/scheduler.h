@@ -14,8 +14,6 @@ FILE *schLog;  // DEBUG
 
 void scheduler_checkContextSwitch();
 
-void scheduler_checkContextSwitch();
-
 void cleanResources(int SIGNUM) {
   fclose(pFile);
   fclose(pcbLogFile);
@@ -38,8 +36,8 @@ void scheduler_preemptProcess(process *p) {
           p->waiting);
   fflush(pFile);
 
-  fprintf(schLog, "[%d]\t%zu STOP  \tREM (%zu)\tBURST (%zu)\n",
-          getClk(), p->id, p->remaining, p->runtime);
+  fprintf(schLog, "[%d]\t%zu STOP  \tREM (%zu)\n",
+          getClk(), p->id, p->remaining);
   fflush(schLog);
 
   // TODO: store context of process
@@ -66,8 +64,8 @@ void scheduler_resumeProcess(process *p) {
           p->waiting);
   fflush(pFile);
 
-  fprintf(schLog, "[%d]\t%zu %s\tREM (%zu)\tBURST (%zu)\n",
-          getClk(), p->id, started ? "START " : "RESUME", p->remaining, p->runtime);
+  fprintf(schLog, "[%d]\t%zu %s\tREM (%zu)\n",
+          getClk(), p->id, started ? "START " : "RESUME", p->remaining);
   fflush(schLog);
 
   // TODO: resume context of process
@@ -100,8 +98,8 @@ void terminatedProcessHandler(int SIGNUM) {
   fflush(pFile);
 
   // DEBUG
-  fprintf(schLog, "[%d]\t%zu FINISH\tREM (%zu)\tBURST (%zu)\n",
-          getClk(), p->id, p->remaining, p->runtime);
+  fprintf(schLog, "[%d]\t%zu FINISH\tREM (%zu)\n",
+          getClk(), p->id, p->remaining);
   fflush(schLog);
 
   runningProcess = NULL;
@@ -200,8 +198,8 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   fprintf(pFile, "Process received at clock %d, id is %zu\n", getClk(), msgqBuffer->p.id);
   fflush(pFile);
 
-  fprintf(schLog, "[%d]\t%zu ARRIVE\n",
-          getClk(), msgqBuffer->p.id);
+  fprintf(schLog, "[%d]\t%zu ARRIVE\tBURST (%zu)\n",
+          getClk(), msgqBuffer->p.id, msgqBuffer->p.runtime);
   fflush(schLog);
 
   int processPid = fork();
