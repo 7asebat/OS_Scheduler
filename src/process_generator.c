@@ -28,7 +28,7 @@ void parseInput(char *fn) {
       index++;
     } while (token != NULL);
     process *pTemp = (process *)malloc(sizeof(process));
-    pTemp->id = data[0], pTemp->arrival = data[1], pTemp->remaining = data[2], pTemp->runtime = data[2], pTemp->priority = data[3];
+    pTemp->id = data[0], pTemp->arrival = data[1], pTemp->remaining = data[2], pTemp->runtime = data[2], pTemp->priority = data[3], pTemp->memsize = data[4];
     cqueue_enqueue(&processQueue, pTemp);
   }
 }
@@ -50,7 +50,8 @@ void startProcesses() {
   }
   if (clkPid == 0) {
     execl("bin/clk.out", "clk.out", (char *)NULL);
-  } else {
+  }
+  else {
     schedulerPid = fork();
     if (schedulerPid < 0) {
       perror("Error while forking");

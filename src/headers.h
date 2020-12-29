@@ -86,6 +86,7 @@ typedef struct process {
   size_t status;
   size_t id;
   size_t pid;
+  size_t memsize;
 } process;
 
 process *runningProcess = NULL;
@@ -93,7 +94,6 @@ process *runningProcess = NULL;
 #define ALGORITHM_HPF 1
 #define ALGORITHM_SRTN 2
 #define ALGORITHM_RR 3
-
 
 typedef struct schedulingAlgorithm {
   void *algorithmDS;
@@ -110,4 +110,3 @@ typedef struct {
 } msgBuf;
 
 #endif
-

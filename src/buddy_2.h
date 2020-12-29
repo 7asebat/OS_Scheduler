@@ -36,8 +36,22 @@ int __init_slots(int size, unsigned int*** _slots, unsigned int** _n_slots) {
 
   // allocate slots
   unsigned int** slots = (unsigned int**)malloc((slotsNum) * sizeof(unsigned int*));
+
+  if (slots == NULL)
+    return -1;
+
   for (int i = 0; i < slotsNum; i++) {
     slots[i] = (unsigned int*)malloc(size * sizeof(unsigned int));
+
+    if (slots[i] == NULL) {
+      for (int j = i - 1; j >= 0; j--)
+        free(slots[j]);
+
+      free(slots);
+
+      return -1;
+    }
+
     size /= 2;
   }
 
@@ -45,6 +59,16 @@ int __init_slots(int size, unsigned int*** _slots, unsigned int** _n_slots) {
 
   // allocate n_slots
   unsigned int* n_slots = (unsigned int*)malloc((slotsNum) * sizeof(unsigned int));
+
+  if (n_slots == NULL) {
+    for (int j = slotsNum; j >= 0; j--)
+      free(slots[j]);
+
+    free(slots);
+
+    return -1;
+  }
+
   memset(n_slots, 0, (slotsNum) * sizeof(unsigned int));
 
   *_n_slots = n_slots;
@@ -56,9 +80,12 @@ int __init_slots(int size, unsigned int*** _slots, unsigned int** _n_slots) {
  * @return index inserted at on sucess, -1 on failure
  */
 int __slot_insert(int slotIdx, int val) {
+  if (slotIdx < 0)
+    return -1;
+
   int i = 0;
 
-  while (i < n_slots[slotIdx] && slots[slotIdx][i] < val) {  // TODO: replace this with binary search
+  while (i < n_slots[slotIdx] && slots[slotIdx][i] < val) {
     i++;
   }
 
@@ -105,7 +132,13 @@ int __buddy_split(int slotIdx) {
   return 0;
 }
 
-void __buddy_check_merge(int slotIdx, int elemIdx) {
+/**
+ * Checks if a block can be merged with its neighbours
+ * @param slotIdx unsigned integer representing the slot index
+ * @param elemIdx unsigned integer representing the element index inside the slot
+ * @return void
+ */
+void __buddy_check_merge(unsigned int slotIdx, unsigned int elemIdx) {
   unsigned int elemPos = slots[slotIdx][elemIdx];
   unsigned int isOddIdx = ((elemPos / (1 << slotIdx)) % 2);
 
@@ -122,7 +155,8 @@ void __buddy_check_merge(int slotIdx, int elemIdx) {
 
       __buddy_check_merge(slotIdx + 1, insertedAt);
     }
-  } else {  // evenIdx -> check if right of me is free
+  }
+  else {  // evenIdx -> check if right of me is free
     if (elemIdx < ((int)n_slots[slotIdx] - 1) && slots[slotIdx][elemIdx + 1] - elemPos == (1 << slotIdx)) {
       // I have a right and it is the one right after me
       unsigned int slotStart = slots[slotIdx][elemIdx];
@@ -139,7 +173,12 @@ void __buddy_check_merge(int slotIdx, int elemIdx) {
 
 /* Buddy Interface */
 
-int buddy_allocate(int size) {
+/**
+ * Allocates a block in the memory with a given size
+ * @param size unsigned integer representing the block size wanted
+ * @return position of block on success, -1 on failure
+ */
+int buddy_allocate(unsigned int size) {
   unsigned int allocSize = __nextPowerOf2(size);
   unsigned int allocIdx = __logOfPower2(allocSize);
 
@@ -155,18 +194,33 @@ int buddy_allocate(int size) {
   return alloc_pos;
 }
 
-void buddy_free(int loc, int size) {
+/**
+ * Frees a block from the memory
+ * @param loc integer represents the location to be freed
+ * @param size integer represents the size of that block
+ * @return 0 on success, -1 on failure
+ */
+int buddy_free(int loc, int size) {
   unsigned int allocSize = __nextPowerOf2(size);
   unsigned int allocIdx = __logOfPower2(allocSize);
 
-  unsigned int insertedAt = __slot_insert(allocIdx, loc);
+  int insertedAt = __slot_insert(allocIdx, loc);
+
+  if (insertedAt == -1)
+    return -1;
 
   __buddy_check_merge(allocIdx, insertedAt);
 
-  return;
+  return 0;
 }
 
-void buddy_init(int size) {
+/**
+ * Initializes buddy memory with given size
+ * @param size unsigned integer representing the size of the memory
+ *             must be a power of two
+ * @return void
+ */
+void buddy_init(unsigned int size) {
   __init_slots(size, &slots, &n_slots);
 
   unsigned int logSize = __logOfPower2(size);
@@ -174,7 +228,12 @@ void buddy_init(int size) {
   n_slots[logSize] = 1;
 }
 
-void buddy_print(int size) {
+/**
+ * Prints the buddy memory representation, useful for debugging
+ * @param size unsigned integer representing the size of the memory
+ * @return void
+ */
+void buddy_print(unsigned int size) {
   unsigned int numSlots = __logOfPower2(size) + 1;
 
   for (int i = 0; i < numSlots; i++) {
