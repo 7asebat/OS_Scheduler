@@ -10,7 +10,6 @@ int main(int argc, char *argv[]) {
   msgqBuffer.mtype = 1;  // Dummy val
   int currentClk, previousClk = -1;
 
-  FILE *pqueueLogFile = fopen("logs/pqueue_log.txt", "w");
   while (1) {
     currentClk = getClk();
     if (scheduler_getMessage(msgqId, &msgqBuffer, currentClk)) {
@@ -21,11 +20,7 @@ int main(int argc, char *argv[]) {
         pcb_update();
       }
 
-      bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
-
-      if (mustPreempt) {
-        scheduler_checkContextSwitch();
-      }
+      scheduler_checkContextSwitch();
 
       if (currentClk > previousClk) {
         previousClk = currentClk;
