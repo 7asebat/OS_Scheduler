@@ -23,7 +23,7 @@ size_t RR_start;
  * @return true if the process should be preempted
  */
 bool RR_mustPreempt(void *ds) {
-  int clk = getClk();
+  int clk = clk_get();
   if (runningProcess == NULL) {
     RR_start = clk;
     return true;
@@ -72,25 +72,35 @@ int RR_removeProcess(void *ds, process *p) {
 }
 
 /**
+ * Frees the resources allocated by the Round-robin algorithm.
+ * @return -1 on failure, 0 on success
+ */
+int RR_free(void *ds) {
+  cqueue *queue = (cqueue *)ds;
+  return cqueue_free(queue);
+}
+
+/**
  * Assigns the Round-robin algorithm to the scheduler.
  * 
  * Also initializes the Round-robin data structure, the
  * `RR_quanta` should be pre-initialized.
  * @return -1 on failure, 0 on success
  */
-int RR_init(schedulingAlgorithm *runningAlgorithm) {
+int RR_init(scalgorithm *runningAlgorithm) {
+  if (!runningAlgorithm) return -1;
+
   cqueue *queue = (cqueue *)malloc(sizeof(cqueue));
   cqueue_create(queue, DS_MAX_SIZE);
 
-  schedulingAlgorithm sa = {
+  *runningAlgorithm = (scalgorithm) {
     queue,
     RR_insertProcess,
     RR_mustPreempt,
     RR_getNextProcess,
     RR_removeProcess,
+    RR_free,
   };
-
-  if (runningAlgorithm) *runningAlgorithm = sa;
   return 0;
 }
 

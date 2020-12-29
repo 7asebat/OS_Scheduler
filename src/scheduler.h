@@ -7,7 +7,7 @@
 #include "headers.h"
 #include "pcb.h"
 
-schedulingAlgorithm currentAlgorithm;
+scalgorithm currentAlgorithm;
 FILE *log_scheduler;
 FILE *log_memory;
 FILE *log_pcb;
@@ -15,8 +15,12 @@ FILE *log_sch;
 
 void scheduler_checkContextSwitch();
 
+/**
+ * Cleans up the resources allocated by the scheduler, called prior to program exit.
+ */
 void scheduler_cleanup(int SIGNUM) {
   fclose(log_scheduler);
+  fclose(log_memory);
   fclose(log_pcb);
   fclose(log_memory);
   fclose(log_sch);
@@ -26,34 +30,34 @@ void scheduler_cleanup(int SIGNUM) {
   int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   msgctl(msgqId, IPC_RMID, (struct msqid_ds *)0);
 
-  destroyClk(false);
+  clk_destroy(false);
 
   signal(SIGINT, scheduler_cleanup);
+
+  currentAlgorithm.free(currentAlgorithm.ds);
 }
 
+/**
+ * Preempts the current running process.
+ */
 void scheduler_preemptProcess(process *p) {
-  if (p == NULL)
-    return;
+  if (p == NULL) return;
 
-  int pid = p->pid;
   p->status = STATUS_WAITING;
-  kill(pid, SIGTSTP);
-  fprintf(pFile, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
-          getClk(),
+  kill(p->id, SIGTSTP);
+  fprintf(log_scheduler, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
+          clk_get(),
           p->id,
           p->arrival,
           p->runtime,
           p->remaining,
           p->waiting);
-  fflush(pFile);
-
-  fprintf(schLog, "[%d]\t%zu STOP  \tREM (%zu)\n",
-          getClk(), p->id, p->remaining);
-  fflush(schLog);
-
-  // TODO: store context of process
+  fflush(log_scheduler);
 }
 
+/**
+ * Resumes a given process
+ */
 void scheduler_resumeProcess(process *p) {
   runningProcess = p;
   if (p == NULL) return;
@@ -65,22 +69,23 @@ void scheduler_resumeProcess(process *p) {
 
   bool started = (p->remaining == p->runtime);
 
-  fprintf(pFile, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
-          getClk(),
+  fprintf(log_scheduler, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
+          clk_get(),
           p->id,
           (started) ? "started" : "resumed",
           p->arrival,
           p->runtime,
           p->remaining,
           p->waiting);
-  fflush(pFile);
-
-  fprintf(schLog, "[%d]\t%zu %s\tREM (%zu)\n",
-          getClk(), p->id, started ? "START " : "RESUME", p->remaining);
-  fflush(log_sch);
+  fflush(log_scheduler);
 }
 
-void terminatedProcessHandler(int SIGNUM) {
+/**
+ * Is called whenever a process terminates and sends a signal to the scheduler. 
+ * Removes the process from the data structure and the process control block, 
+ * frees the memory allocated by it, and checks if context switching is necessary.
+ */
+void scheduler_processTerminationHandler(int SIGNUM) {
   int process_status;
 
   int exitedProcessPid = wait(&process_status);
@@ -90,13 +95,13 @@ void terminatedProcessHandler(int SIGNUM) {
   }
   process *p = pcb_getProcessByPID(exitedProcessPid);
 
-  currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
+  currentAlgorithm.removeProcess(currentAlgorithm.ds, p);
 
-  size_t TA = getClk() - p->arrival;
+  size_t TA = clk_get() - p->arrival;
   double WTA = TA / (double)p->runtime;
 
-  fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
-          getClk(),
+  fprintf(log_scheduler, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
+          clk_get(),
           p->id,
           p->arrival,
           p->runtime,
@@ -118,18 +123,24 @@ void terminatedProcessHandler(int SIGNUM) {
   scheduler_checkContextSwitch();
 }
 
+/**
+ * Performs context switching if necessary, preempting the current process, 
+ * and resuming the next process in the ready queue, which is determined by 
+ * the scheduling algorithm.
+ */
 void scheduler_checkContextSwitch() {
-  bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
+  bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.ds);
 
   if (mustPreempt) {
     scheduler_preemptProcess(runningProcess);
-    process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+    process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.ds);
 
     scheduler_resumeProcess(nextProcess);
   }
 }
 
 /**
+ * Initializes the scheduler and all its components
  * @return msqId
  */
 int scheduler_init(int algorithm, int *msgqId_p) {
@@ -146,15 +157,15 @@ int scheduler_init(int algorithm, int *msgqId_p) {
   act.sa_handler = terminatedProcessHandler;
   sigemptyset(&act.sa_mask);
   act.sa_flags = SA_NOCLDSTOP;
-
   if (sigaction(SIGCHLD, &act, 0) == -1) {
     perror("sigaction");
     exit(1);
   }
 
-  signal(SIGINT, cleanResources);
+  // Latch the cleanup handler
+  signal(SIGINT, scheduler_cleanup);
 
-  initClk();
+  clk_init();
   pcb_init(100);
 
   switch (algorithm) {
@@ -204,12 +215,8 @@ int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer) {
  * Creates a new stopped process and logs its arrival.
  */
 void scheduler_createProcess(msgBuf *msgqBuffer) {
-  fprintf(pFile, "Process received at clock %d, id is %zu\n", getClk(), msgqBuffer->p.id);
-  fflush(pFile);
-
-  fprintf(schLog, "[%d]\t%zu ARRIVE\tBURST (%zu)\n",
-          getClk(), msgqBuffer->p.id, msgqBuffer->p.runtime);
-  fflush(schLog);
+  fprintf(log_scheduler, "Process received at clock %d, id is %zu\n", clk_get(), msgqBuffer->p.id);
+  fflush(log_scheduler);
 
   int processPid = fork();
   if (processPid == 0) {
@@ -220,11 +227,10 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   }
 
   kill(processPid, SIGTSTP);
-
   msgqBuffer->p.pid = processPid;
 
   process *pcbProcessEntry = pcb_insert(&msgqBuffer->p);
-  currentAlgorithm.insertProcess(currentAlgorithm.algorithmDS, pcbProcessEntry);
+  currentAlgorithm.insertProcess(currentAlgorithm.ds, pcbProcessEntry);
 }
 
 #endif

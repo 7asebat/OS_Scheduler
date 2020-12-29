@@ -1,42 +1,51 @@
 #include "scheduler.h"
 
 int main(int argc, char *argv[]) {
+  // Initialize the scheduler
   int algorithm = argv[1][0] - '0';
   int msgqId;
   scheduler_init(algorithm, &msgqId);
 
+  // Create the message buffer
   msgBuf msgqBuffer;
-  msgqBuffer.mtype = 1;  // Dummy val
-  int currentClk, previousClk = -1;
+  msgqBuffer.mtype = 1;
 
+  int timestep, previousTS = -1;
   while (1) {
-    currentClk = getClk();
+    timestep = clk_get();
+    // Check if new processes have been received
     if (scheduler_getMessage(msgqId, &msgqBuffer)) {
       // No process was received
-    }
-    else {
+    } else {
+      // Create process
       scheduler_createProcess(&msgqBuffer);
 
-      if (currentClk > previousClk) {
+      // Update PCB with new timestep
+      if (timestep > previousTS) {
         pcb_update();
       }
 
+      // Handle context switching
       scheduler_checkContextSwitch();
 
-      if (currentClk > previousClk) {
-        pcb_log(pcbLogFile);
-        previousClk = currentClk;
+      // Update timestep
+      if (timestep > previousTS) {
+        previousTS = timestep;
       }
     }
 
-    if (currentClk > previousClk) {
+    if (timestep > previousTS) {
+      // Update PCB with new timestep
       pcb_update();
+
+      // Handle context switching
       scheduler_checkContextSwitch();
-      pcb_log(pcbLogFile);
-      previousClk = currentClk;
+
+      // Update timestep
+      previousTS = timestep;
     }
   }
 
-  destroyClk(true);
+  clk_destroy(true);
   return 0;
 }
