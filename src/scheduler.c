@@ -17,27 +17,26 @@ int main(int argc, char *argv[]) {
     } else {
       scheduler_createProcess(&msgqBuffer, currentClk);
 
+      if (currentClk > previousClk) {
+        pcb_update();
+      }
+
       bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
 
       if (mustPreempt) {
-        scheduler_preemptProcess(runningProcess);
-        process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+        scheduler_checkContextSwitch();
+      }
 
-        scheduler_resumeProcess(nextProcess);
+      if (currentClk > previousClk) {
+        previousClk = currentClk;
+        pcb_log(pcbLogFile);
       }
     }
 
     if (currentClk > previousClk) {
       previousClk = currentClk;
       pcb_update();
-      bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
-
-      if (mustPreempt) {
-        scheduler_preemptProcess(runningProcess);
-        process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
-
-        scheduler_resumeProcess(nextProcess);
-      }
+      scheduler_checkContextSwitch();
       pcb_log(pcbLogFile);
     }
   }

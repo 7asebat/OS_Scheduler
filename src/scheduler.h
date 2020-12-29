@@ -11,6 +11,8 @@ schedulingAlgorithm currentAlgorithm;
 FILE *pFile;
 FILE *pcbLogFile;
 
+void scheduler_checkContextSwitch();
+
 void cleanResources(int SIGNUM) {
   fclose(pFile);
   fclose(pcbLogFile);
@@ -90,6 +92,10 @@ void terminatedProcessHandler(int SIGNUM) {
 
   pcb_remove(p);
 
+  scheduler_checkContextSwitch();
+}
+
+void scheduler_checkContextSwitch() {
   bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
 
   if (mustPreempt) {
@@ -98,7 +104,6 @@ void terminatedProcessHandler(int SIGNUM) {
 
     scheduler_resumeProcess(nextProcess);
   }
-  // signal(SIGCHLD, terminatedProcessHandler);
 }
 
 /**
