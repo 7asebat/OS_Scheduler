@@ -131,6 +131,9 @@ void scheduler_checkContextSwitch() {
 int scheduler_init(int algorithm, int *msgqId_p) {
   log_scheduler = fopen("logs/scheduler.log", "w");
 
+  fputs("#At time x process y state arr w total z remain y wait k\n", log_scheduler);
+  fflush(log_scheduler);
+
   struct sigaction act;
   act.sa_handler = scheduler_processTerminationHandler;
   sigemptyset(&act.sa_mask);
@@ -193,12 +196,8 @@ int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer) {
  * Creates a new stopped process and logs its arrival.
  */
 void scheduler_createProcess(msgBuf *msgqBuffer) {
-  fprintf(log_scheduler, "Process received at clock %d, id is %zu\n", clk_get(), msgqBuffer->p.id);
-  fflush(log_scheduler);
-
   int processPid = fork();
   if (processPid == 0) {
-    // raise(SIGSTOP);
     char pRemainingTime[10];
     sprintf(pRemainingTime, "%zu", msgqBuffer->p.remaining);
     execl("bin/process.out", "process.out", pRemainingTime, (char *)NULL);
