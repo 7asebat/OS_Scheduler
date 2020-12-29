@@ -36,7 +36,7 @@ void scheduler_preemptProcess(process *p) {
   if (p == NULL) return;
 
   p->status = STATUS_WAITING;
-  kill(p->id, SIGTSTP);
+  kill(p->pid, SIGTSTP);
   fprintf(log_scheduler, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
           clk_get(),
           p->id,
