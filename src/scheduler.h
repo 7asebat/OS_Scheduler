@@ -72,15 +72,18 @@ void terminatedProcessHandler(int SIGNUM) {
 
   currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
 
-  fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
+  size_t TA = getClk() - p->arrival;
+  double WTA = TA / (double)p->runtime;
+
+  fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
           getClk(),
           p->id,
           p->arrival,
           p->runtime,
           p->remaining,
           p->waiting,
-          (size_t)0,
-          (size_t)0);
+          TA,
+          WTA);
   fflush(pFile);
 
   runningProcess = NULL;
