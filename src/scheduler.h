@@ -62,6 +62,7 @@ void scheduler_resumeProcess(process *p) {
 
 void terminatedProcessHandler(int SIGNUM) {
   int process_status;
+  
 
   int exitedProcessPid = wait(&process_status);
   if (WIFEXITED(process_status)) {
@@ -69,8 +70,9 @@ void terminatedProcessHandler(int SIGNUM) {
     printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
   }
   process *p = pcb_getProcessByPID(exitedProcessPid);
-
+ 
   currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
+
 
   fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
           getClk(),
@@ -82,6 +84,8 @@ void terminatedProcessHandler(int SIGNUM) {
           (size_t)0,
           (size_t)0);
   fflush(pFile);
+  
+
   runningProcess = NULL;
 
   pcb_remove(p);
@@ -94,7 +98,6 @@ void terminatedProcessHandler(int SIGNUM) {
 
     scheduler_resumeProcess(nextProcess);
   }
-
   // signal(SIGCHLD, terminatedProcessHandler);
 }
 
@@ -198,7 +201,7 @@ void scheduler_createProcess(msgBuf *msgqBuffer, int currentClk) {
     execl("bin/process.out", "process.out", pRemainingTime, (char *)NULL);
   }
 
-  kill(processPid, SIGSTOP);
+  kill(processPid, SIGTSTP);
 
   msgqBuffer->p.pid = processPid;
 

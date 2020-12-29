@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
   int msgqENO;
   msgBuf msgqBuffer;
   msgqBuffer.mtype = 1;  // Dummy val
-
+  FILE *newLogFile = fopen("./logs/newLogs.txt","w");
   int currentClk, previousClk = -1;
   while (1) {
     currentClk = getClk();
@@ -27,6 +27,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (currentClk > previousClk) {
+      fprintf(newLogFile, "Clk = %d\n", getClk());
+      fflush(newLogFile);
       previousClk = currentClk;
       pcb_update();
 
@@ -39,7 +41,7 @@ int main(int argc, char *argv[]) {
         scheduler_resumeProcess(nextProcess);
       }
       pcb_log(pcbLogFile);
-      up(semid, 0);
+      // up(semid, 0);
     }
   }
 
