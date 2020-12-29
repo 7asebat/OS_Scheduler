@@ -1,19 +1,14 @@
 #include "headers.h"
 
-int remainingtime, runTime, waitingTime = 0, startTime, sleepTime;
-FILE* logFile;
+int time_remaining, time_runtime, time_waited = 0, time_start, time_sleep;
 void sleepHandler(int SIGNUM) {
-  sleepTime = getClk();
-  fprintf(logFile, "Now sleeping at time %d\n", sleepTime);
-  fflush(logFile);
+  time_sleep = clk_get();
   raise(SIGSTOP);
   signal(SIGTSTP, sleepHandler);
 }
 
 void wakeHandler(int SIGNUM) {
-  fprintf(logFile, "Now Waking at time %d lastSleepTime %d lastWaitingTime %d\n", getClk(), sleepTime, waitingTime);
-  fflush(logFile);
-  waitingTime += getClk() - sleepTime;
+  time_waited += clk_get() - time_sleep;
   signal(SIGCONT, wakeHandler);
 }
 
@@ -21,16 +16,16 @@ int main(int argc, char* argv[]) {
   signal(SIGTSTP, sleepHandler);
   signal(SIGCONT, wakeHandler);
 
-  initClk();
-  startTime = getClk();
-  runTime = atoi(argv[1]);
-  remainingtime = runTime;
+  clk_init();
+  time_start = clk_get();
+  time_runtime = atoi(argv[1]);
+  time_remaining = time_runtime;
 
-  while (remainingtime > 0) {
-    remainingtime = runTime - (getClk() - startTime - waitingTime);
+  while (time_remaining > 0) {
+    time_remaining = time_runtime - (clk_get() - time_start - time_waited);
   }
 
-  destroyClk(false);
+  clk_destroy(false);
   exit(0);
   return 0;
 }

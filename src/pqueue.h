@@ -193,7 +193,7 @@ int pqueue_free(pqueue *queue) {
 
 void pqueue_log(pqueue *queue, FILE *pFile) {
   fprintf(pFile, "---------------------------------\n");
-  fprintf(pFile, "clk = %d\n", getClk());
+  fprintf(pFile, "clk = %d\n", clk_get());
   for (int i = 0; i < queue->size; i++) {
     fprintf(pFile, "{id= %zu, remaining= %zu, priority= %zu} ", queue->buffer[i]->id, queue->buffer[i]->remaining, queue->buffer[i]->priority);
     fprintf(pFile, "\n");

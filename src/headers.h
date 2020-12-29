@@ -37,7 +37,7 @@
 int *shmaddr;                  //
 //===============================
 
-int getClk() {
+int clk_get() {
   return *shmaddr;
 }
 
@@ -45,7 +45,7 @@ int getClk() {
  * All process call this function at the beginning to establish communication between them and the clock module.
  * Again, remember that the clock is only emulation!
 */
-void initClk() {
+void clk_init() {
   int shmid = shmget(SHKEY, 4, IPC_CREAT | 0644);
   while ((int)shmid == -1) {
     //Make sure that the clock exists
@@ -63,7 +63,7 @@ void initClk() {
  * Input: terminateAll: a flag to indicate whether that this is the end of simulation.
  *                      It terminates the whole system and releases resources.
  */
-void destroyClk(bool terminateAll) {
+void clk_destroy(bool terminateAll) {
   shmdt(shmaddr);
   if (terminateAll) {
     killpg(getpgrp(), SIGINT);
@@ -91,14 +91,15 @@ process *runningProcess = NULL;
 #define ALGORITHM_SRTN 2
 #define ALGORITHM_RR 3
 
-typedef struct schedulingAlgorithm {
-  void *algorithmDS;
+typedef struct scalgorithm {
+  void *ds;
 
   int (*insertProcess)(void *ds, process *p);
   bool (*mustPreempt)(void *ds);
   process *(*getNextProcess)(void *ds);
   int (*removeProcess)(void *ds, process *p);
-} schedulingAlgorithm;
+  int (*free)(void *ds);
+} scalgorithm;
 
 typedef struct {
   long mtype;

@@ -97,10 +97,10 @@ int main(int argc, char *argv[]) {
 
   startProcesses();
 
-  initClk();
+  clk_init();
 
   while (processQueue.occupied != 0) {
-    int currClk = getClk();
+    int currClk = clk_get();
     process *temp = cqueue_front(&processQueue);
     if (temp->arrival <= currClk) {
       temp = cqueue_dequeue(&processQueue);
@@ -116,11 +116,11 @@ int main(int argc, char *argv[]) {
   int statLoc;
   pid_t cPid = wait(&statLoc);
 
-  destroyClk(true);
+  clk_destroy(true);
 }
 
 void clearResources(int signum) {
-  destroyClk(true);
+  clk_destroy(true);
   int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   msgctl(msgqId, IPC_RMID, (struct msqid_ds *)0);
   exit(0);
