@@ -21,4 +21,4 @@ generate:
 	echo $(PROCESS_COUNT) | bin/test_generator.out
 
 run:
-	echo $(ALGORITHM) | bin/process_generator.out
+	bin/process_generator.out
