@@ -51,28 +51,36 @@ bool SRTN_compare(process *a, process *b) {
 }
 
 /**
+ * Frees the resources allocated by the SRTN algorithm.
+ * @return -1 on failure, 0 on success
+ */
+int SRTN_free(void *ds) {
+  pqueue *queue = (pqueue *)ds;
+  return pqueue_free(queue);
+}
+
+/**
  * Assigns the pre-emptive Shortest Remaining Time Next algorithm
  * to the scheduler. 
  * 
  * Also initializes the SRTN data structure.
- * @note SRTN_compare or &SRTN_compare?
  * @return -1 on failure, 0 on success
  */
-int SRTN_init(schedulingAlgorithm *runningAlgorithm) {
+int SRTN_init(scalgorithm *runningAlgorithm) {
+  if (!runningAlgorithm) return -1;
+
   pqueue *queue = (pqueue *)malloc(sizeof(pqueue));
   pqueue_create(queue, DS_MAX_SIZE, &SRTN_compare);
 
-  schedulingAlgorithm sa = {
+  *runningAlgorithm = (scalgorithm) {
     queue,
     SRTN_insertProcess,
     SRTN_mustPreempt,
     SRTN_getNextProcess,
     SRTN_removeProcess,
+    SRTN_free,
   };
 
-  *runningAlgorithm = sa;
   return 0;
 }
-
 #endif
-

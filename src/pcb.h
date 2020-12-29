@@ -5,9 +5,9 @@
 
 struct
 {
-  process **array;
   int used;
   int size;
+  process **array;
 } PCB;
 
 void pcb_init(int initialSize) {
@@ -87,7 +87,7 @@ void pcb_free() {
 
 void pcb_log(FILE *logFile) {
   // Previous clock has finished
-  fprintf(logFile, "------------------------------------------------------------------\n[%d]\n", getClk() - 1);
+  fprintf(logFile, "------------------------------------------------------------------\n[%d]\n", clk_get()-1);
   for (int i = 0; i < PCB.used; i++) {
     process *p = PCB.array[i];
     fprintf(logFile, "ID\t%zu\t", p->id);
