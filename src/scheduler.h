@@ -10,6 +10,9 @@
 schedulingAlgorithm currentAlgorithm;
 FILE *pFile;
 FILE *pcbLogFile;
+FILE *schLog;  // DEBUG
+
+void scheduler_checkContextSwitch();
 
 void cleanResources(int SIGNUM) {
   fclose(pFile);
@@ -32,6 +35,10 @@ void scheduler_preemptProcess(process *p) {
           p->remaining,
           p->waiting);
   fflush(pFile);
+
+  fprintf(schLog, "[%d]\t%zu STOP  \tREM (%zu)\tBURST (%zu)\n",
+          getClk(), p->id, p->remaining, p->runtime);
+  fflush(schLog);
 
   // TODO: store context of process
 }
@@ -56,6 +63,10 @@ void scheduler_resumeProcess(process *p) {
           p->remaining,
           p->waiting);
   fflush(pFile);
+
+  fprintf(schLog, "[%d]\t%zu %s\tREM (%zu)\tBURST (%zu)\n",
+          getClk(), p->id, started ? "START " : "RESUME", p->remaining, p->runtime);
+  fflush(schLog);
 
   // TODO: resume context of process
 }
@@ -86,10 +97,19 @@ void terminatedProcessHandler(int SIGNUM) {
           WTA);
   fflush(pFile);
 
+  // DEBUG
+  fprintf(schLog, "[%d]\t%zu FINISH\tREM (%zu)\tBURST (%zu)\n",
+          getClk(), p->id, p->remaining, p->runtime);
+  fflush(schLog);
+
   runningProcess = NULL;
 
   pcb_remove(p);
 
+  scheduler_checkContextSwitch();
+}
+
+void scheduler_checkContextSwitch() {
   bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
 
   if (mustPreempt) {
@@ -98,18 +118,19 @@ void terminatedProcessHandler(int SIGNUM) {
 
     scheduler_resumeProcess(nextProcess);
   }
-  // signal(SIGCHLD, terminatedProcessHandler);
 }
 
 /**
  * @return msqId
  */
 int scheduler_init(int algorithm, int *msgqId_p) {
-  pcbLogFile = fopen("logs/pcb_log.txt", "w");
-  pFile = fopen("logs/scheduler_log.txt", "w");
+  pcbLogFile = fopen("logs/pcb.log", "w");
+  pFile = fopen("logs/scheduler.log", "w");
   fprintf(pFile, "Scheduler loaded\n");
   fflush(pFile);
 
+  // DEBUG
+  schLog = fopen("./logs/sch.log", "w");
   // signal(SIGCHLD, terminatedProcessHandler);
   struct sigaction act;
 
@@ -154,10 +175,10 @@ int scheduler_init(int algorithm, int *msgqId_p) {
 }
 
 /**
- * Sees if the scheduler received a new message
+ * Sees if the scheduler received a new message.
  * @return -1 on failure, 0 on success.
  */
-int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer, int currentClk) {
+int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer) {
   int msgqENO = msgrcv(msgqId, msgqBuffer, sizeof(process), 1, IPC_NOWAIT);
   if (msgqENO < 0) {
     if (errno != ENOMSG) {
@@ -165,16 +186,21 @@ int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer, int currentClk) {
       exit(-1);
     }
     return -1;
-  } else
+  } else {
     return 0;
+  }
 }
 
 /**
  * Creates a new stopped process and logs its arrival.
  */
-void scheduler_createProcess(msgBuf *msgqBuffer, int currentClk) {
-  fprintf(pFile, "Process received at clock %d, id is %zu\n", currentClk, msgqBuffer->p.id);
+void scheduler_createProcess(msgBuf *msgqBuffer) {
+  fprintf(pFile, "Process received at clock %d, id is %zu\n", getClk(), msgqBuffer->p.id);
   fflush(pFile);
+
+  fprintf(schLog, "[%d]\t%zu ARRIVE\n",
+          getClk(), msgqBuffer->p.id);
+  fflush(schLog);
 
   int processPid = fork();
   if (processPid == 0) {

@@ -64,10 +64,10 @@ int SRTN_init(schedulingAlgorithm *runningAlgorithm) {
 
   schedulingAlgorithm sa = {
     queue,
-    &SRTN_insertProcess,
-    &SRTN_mustPreempt,
-    &SRTN_getNextProcess,
-    &SRTN_removeProcess,
+    SRTN_insertProcess,
+    SRTN_mustPreempt,
+    SRTN_getNextProcess,
+    SRTN_removeProcess,
   };
 
   *runningAlgorithm = sa;
@@ -75,3 +75,4 @@ int SRTN_init(schedulingAlgorithm *runningAlgorithm) {
 }
 
 #endif
+

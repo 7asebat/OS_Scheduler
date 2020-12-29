@@ -76,21 +76,21 @@ void pcb_update() {
 }
 
 void pcb_log(FILE *logFile) {
-  fprintf(logFile, "---------------------------------\n");
-  fprintf(logFile, "clk = %d\n", getClk());
+  // Previous clock has finished
+  fprintf(logFile, "------------------------------------------------------------------\n[%d]\n", getClk()-1);
   for (int i = 0; i < PCB.used; i++) {
     process *p = PCB.array[i];
-    fprintf(logFile, "Process id: %zu \t ", p->id);
-    fprintf(logFile, "Process pid: %zu \t ", p->pid);
-    fprintf(logFile, "Status: %zu \t ", p->status);
-    fprintf(logFile, "Priority: %zu \t ", p->priority);
-    fprintf(logFile, "Arrival time: %zu \t ", p->arrival);
-    fprintf(logFile, "Runtime: %zu \t ", p->runtime);
-    fprintf(logFile, "Remaining time: %zu \t ", p->remaining);
-    fprintf(logFile, "Waiting time: %zu \t \n", p->waiting);
+    fprintf(logFile, "ID\t%zu\t", p->id);
+    fprintf(logFile, "PID\t%zu\t", p->pid);
+    fprintf(logFile, "RUN\t%zu\t", p->status);
+    fprintf(logFile, "PRIO\t%zu\t", p->priority);
+    fprintf(logFile, "ARR\t%zu\t", p->arrival);
+    fprintf(logFile, "BURST\t%zu\t", p->runtime);
+    fprintf(logFile, "REM\t%zu\t", p->remaining);
+    fprintf(logFile, "WAIT\t%zu\t\n", p->waiting);
     fflush(logFile);
   }
-  fprintf(logFile, "---------------------------------");
+  fprintf(logFile, "\n------------------------------------------------------------------");
   fflush(logFile);
 }
 

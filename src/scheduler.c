@@ -5,7 +5,6 @@ int main(int argc, char *argv[]) {
   int msgqId;
   scheduler_init(algorithm, &msgqId);
 
-  int msgqENO;
   msgBuf msgqBuffer;
   msgqBuffer.mtype = 1;  // Dummy val
   int currentClk, previousClk = -1;
@@ -13,31 +12,31 @@ int main(int argc, char *argv[]) {
   FILE *pqueueLogFile = fopen("logs/pqueue_log.txt", "w");
   while (1) {
     currentClk = getClk();
-    if (scheduler_getMessage(msgqId, &msgqBuffer, currentClk)) {
+    if (scheduler_getMessage(msgqId, &msgqBuffer)) {
+      // No process was received
     } else {
-      scheduler_createProcess(&msgqBuffer, currentClk);
+      scheduler_createProcess(&msgqBuffer);
+
+      if (currentClk > previousClk) {
+        pcb_update();
+      }
 
       bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
 
       if (mustPreempt) {
-        scheduler_preemptProcess(runningProcess);
-        process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
+        scheduler_checkContextSwitch();
+      }
 
-        scheduler_resumeProcess(nextProcess);
+      if (currentClk > previousClk) {
+        previousClk = currentClk;
+        pcb_log(pcbLogFile);
       }
     }
 
     if (currentClk > previousClk) {
       previousClk = currentClk;
       pcb_update();
-      bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
-
-      if (mustPreempt) {
-        scheduler_preemptProcess(runningProcess);
-        process *nextProcess = currentAlgorithm.getNextProcess(currentAlgorithm.algorithmDS);
-
-        scheduler_resumeProcess(nextProcess);
-      }
+      scheduler_checkContextSwitch();
       pcb_log(pcbLogFile);
     }
   }
@@ -45,3 +44,4 @@ int main(int argc, char *argv[]) {
   destroyClk(true);
   return 0;
 }
+

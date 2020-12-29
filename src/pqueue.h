@@ -44,7 +44,7 @@ void __pqueue_swap(process **l, process **r) {
  * @return{char} returns comparison result, 1 if a < b, 0 elsewise
  */
 bool pqueue_pcompare(process *a, process *b) {
-  if (a->priority < b->priority)  // a < b if a.priority > b.priority
+  if (a->priority < b->priority)
     return true;
   else
     return false;
