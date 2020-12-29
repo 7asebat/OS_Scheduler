@@ -13,7 +13,7 @@ int RR_insertProcess(void *ds, process *p) {
 }
 
 size_t RR_quanta = 2;
-size_t RR_remainingTime;
+size_t RR_start;
 /**
  * Decides if the scheduler must preempt the current running process. 
  * 
@@ -23,14 +23,15 @@ size_t RR_remainingTime;
  * @return true if the process should be preempted
  */
 bool RR_mustPreempt(void *ds) {
+  int clk = getClk();
   if (runningProcess == NULL) {
-    RR_remainingTime = RR_quanta;
+    RR_start = clk;
     return true;
   }
 
   cqueue *queue = (cqueue *)ds;
-  if (!--RR_remainingTime) {
-    RR_remainingTime = RR_quanta;
+  if (clk - RR_start == RR_quanta) {
+    RR_start = clk;
     return queue->occupied > 1;
   }
 
@@ -78,14 +79,12 @@ int RR_init(schedulingAlgorithm *runningAlgorithm) {
   cqueue *queue = (cqueue *)malloc(sizeof(cqueue));
   cqueue_create(queue, DS_MAX_SIZE);
 
-  RR_remainingTime = RR_quanta;
-
   schedulingAlgorithm sa = {
     queue,
-    &RR_insertProcess,
-    &RR_mustPreempt,
-    &RR_getNextProcess,
-    &RR_removeProcess,
+    RR_insertProcess,
+    RR_mustPreempt,
+    RR_getNextProcess,
+    RR_removeProcess,
   };
 
   if (runningAlgorithm) *runningAlgorithm = sa;
