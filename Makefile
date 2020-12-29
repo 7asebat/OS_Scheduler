@@ -4,7 +4,7 @@ ALGORITHM?=3
 
 build:
 	mkdir -p bin input logs
-	rm -rf logs/process_*.txt
+	rm -rf logs/process_*.log
 	$(CC) src/process_generator.c -o bin/process_generator.out
 	$(CC) src/clk.c -o bin/clk.out
 	$(CC) src/scheduler.c -o bin/scheduler.out
