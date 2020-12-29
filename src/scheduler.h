@@ -23,7 +23,7 @@ void scheduler_preemptProcess(process *p) {
 
   int pid = p->pid;
   p->status = STATUS_WAITING;
-  kill(pid, SIGSTOP);
+  kill(pid, SIGTSTP);
   fprintf(pFile, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
           getClk(),
           p->id,

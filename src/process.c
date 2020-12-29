@@ -7,6 +7,7 @@ void sleepHandler(int SIGNUM){
   sleepTime = getClk();
   fprintf(logFile, "Now sleeping at time %d\n",sleepTime);
   fflush(logFile);
+  raise(SIGSTOP);
   signal(SIGTSTP,sleepHandler);
 }
 
@@ -32,17 +33,9 @@ int main(int argc, char* argv[]) {
   startTime = getClk();
   runTime = atoi(argv[1]);
   remainingtime = runTime;
-  fprintf(logFile, "Clk = %d, remainingTime = %d\n", getClk(),remainingtime);
-  fflush(logFile);
-  int prevClk=-1,currClk=-1;
+  
   while (remainingtime > 0) 
   {
-    currClk=getClk();
-    if(currClk>prevClk){
-      fprintf(logFile, "Clk = %d, remainingTime = %d\n", currClk,remainingtime);
-      fflush(logFile);
-      prevClk=currClk;
-    }
     remainingtime = runTime - (getClk()-startTime-waitingTime);
   }
 
