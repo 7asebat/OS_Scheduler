@@ -20,10 +20,6 @@ int main(int argc, char *argv[]) {
         pcb_update();
       }
 
-      if (currentClk > previousClk) {
-        pcb_update();
-      }
-
       scheduler_checkContextSwitch();
 
       if (currentClk > previousClk) {
