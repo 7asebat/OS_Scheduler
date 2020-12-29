@@ -19,7 +19,7 @@ pqueue PRIORITY_QUEUE_DEFAULT = {0, 0, NULL, NULL};
 
 void pqueue_print(pqueue *pq) {
   for (int i = 0; i < pq->size; i++) {
-    printf("%zu ", pq->buffer[i]->priority);
+    printf("%zu ", pq->buffer[i]->remaining);
   }
   printf("\n");
 }
@@ -105,32 +105,17 @@ void __pqueue_reheapDown(pqueue *queue, int i) {
         __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
         i = R_CHILD(i);
       }
-    } else {
+    } else if (leftChildCan) {
       __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
       i = L_CHILD(i);
+    } else {
+      __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
+      i = R_CHILD(i);
     }
 
     leftChildCan = L_CHILD(i) < *size && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i]);
     rightChildCan = R_CHILD(i) < *size && queue->compare(queue->buffer[R_CHILD(i)], queue->buffer[i]);
   }
-
-  // while (i < *size) {
-  //   if (L_CHILD(i) < *size && R_CHILD(i) < *size) {
-  //     if (queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[R_CHILD(i)]) && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i]))
-  //     // if l_child < r_child , swap i with l_child
-  //     {
-  //       __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
-  //       i = L_CHILD(i);
-  //     } else if (queue->compare(queue->buffer[R_CHILD(i)], queue->buffer[i])) {
-  //       __pqueue_swap(&queue->buffer[i], &queue->buffer[R_CHILD(i)]);
-  //       i = R_CHILD(i);
-  //     }
-  //   } else if (L_CHILD(i) < *size && queue->compare(queue->buffer[L_CHILD(i)], queue->buffer[i])) {
-  //     __pqueue_swap(&queue->buffer[i], &queue->buffer[L_CHILD(i)]);
-  //   } else {
-  //     break;
-  //   }
-  // }
 }
 
 /**
@@ -203,4 +188,14 @@ int pqueue_free(pqueue *queue) {
   return 0;
 }
 
+void pqueue_log(pqueue *queue, FILE *pFile) {
+  fprintf(pFile, "---------------------------------\n");
+  fprintf(pFile, "clk = %d\n", getClk());
+  for (int i = 0; i < queue->size; i++) {
+    fprintf(pFile, "{id= %zu, remaining= %zu, priority= %zu} ", queue->buffer[i]->id, queue->buffer[i]->remaining, queue->buffer[i]->priority);
+    fprintf(pFile, "\n");
+  }
+  fprintf(pFile, "---------------------------------");
+  fflush(pFile);
+}
 #endif

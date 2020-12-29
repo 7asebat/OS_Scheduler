@@ -62,7 +62,6 @@ void scheduler_resumeProcess(process *p) {
 
 void terminatedProcessHandler(int SIGNUM) {
   int process_status;
-  
 
   int exitedProcessPid = wait(&process_status);
   if (WIFEXITED(process_status)) {
@@ -70,9 +69,8 @@ void terminatedProcessHandler(int SIGNUM) {
     printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
   }
   process *p = pcb_getProcessByPID(exitedProcessPid);
- 
-  currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
 
+  currentAlgorithm.removeProcess(currentAlgorithm.algorithmDS, p);
 
   fprintf(pFile, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %zu\n",
           getClk(),
@@ -84,7 +82,6 @@ void terminatedProcessHandler(int SIGNUM) {
           (size_t)0,
           (size_t)0);
   fflush(pFile);
-  
 
   runningProcess = NULL;
 
@@ -104,7 +101,7 @@ void terminatedProcessHandler(int SIGNUM) {
 /**
  * @return msqId
  */
-int scheduler_init(int algorithm, int *msgqId_p, int *semid_p) {
+int scheduler_init(int algorithm, int *msgqId_p) {
   pcbLogFile = fopen("logs/pcb_log.txt", "w");
   pFile = fopen("logs/scheduler_log.txt", "w");
   fprintf(pFile, "Scheduler loaded\n");
@@ -149,23 +146,6 @@ int scheduler_init(int algorithm, int *msgqId_p, int *semid_p) {
   }
 
   *msgqId_p = msgqId;
-
-  int semid = semget(SEMKEY, 1, 0666 | IPC_CREAT);
-
-  if (semid == -1) {
-    perror("error in creating semaphore");
-    exit(-1);
-  }
-
-  *semid_p = semid;
-
-  Semun semun;
-
-  semun.val = 0; /* initial value of the semaphore, Binary semaphore */
-  if (semctl(semid, 0, SETVAL, semun) == -1) {
-    perror("Error in semctl");
-    exit(-1);
-  }
 
   return 0;
 }

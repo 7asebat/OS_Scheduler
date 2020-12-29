@@ -2,14 +2,15 @@
 
 int main(int argc, char *argv[]) {
   int algorithm = argv[1][0] - '0';
-  int msgqId, semid;
-  scheduler_init(algorithm, &msgqId, &semid);
+  int msgqId;
+  scheduler_init(algorithm, &msgqId);
 
   int msgqENO;
   msgBuf msgqBuffer;
   msgqBuffer.mtype = 1;  // Dummy val
-  FILE *newLogFile = fopen("./logs/newLogs.txt","w");
   int currentClk, previousClk = -1;
+
+  FILE *pqueueLogFile = fopen("logs/pqueue_log.txt", "w");
   while (1) {
     currentClk = getClk();
     if (scheduler_getMessage(msgqId, &msgqBuffer, currentClk)) {
@@ -27,11 +28,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (currentClk > previousClk) {
-      fprintf(newLogFile, "Clk = %d\n", getClk());
-      fflush(newLogFile);
       previousClk = currentClk;
       pcb_update();
-
       bool mustPreempt = currentAlgorithm.mustPreempt(currentAlgorithm.algorithmDS);
 
       if (mustPreempt) {
@@ -41,7 +39,6 @@ int main(int argc, char *argv[]) {
         scheduler_resumeProcess(nextProcess);
       }
       pcb_log(pcbLogFile);
-      // up(semid, 0);
     }
   }
 

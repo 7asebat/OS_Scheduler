@@ -35,8 +35,6 @@
 
 #define MSGQKEY 200
 
-#define SEMKEY 400
-
 #define DS_MAX_SIZE 100
 ///==============================
 //don't mess with this variable//
@@ -74,45 +72,6 @@ void destroyClk(bool terminateAll) {
   shmdt(shmaddr);
   if (terminateAll) {
     killpg(getpgrp(), SIGINT);
-  }
-}
-
-typedef union {
-  int val;               /* value for SETVAL */
-  struct semid_ds *buf;  /* buffer for IPC_STAT & IPC_SET */
-  ushort *array;         /* array for GETALL & SETALL */
-  struct seminfo *__buf; /* buffer for IPC_INFO */
-  void *__pad;
-} Semun;
-
-void down(int sem, int id) {
-  struct sembuf p_op;
-
-  p_op.sem_num = id;
-  p_op.sem_op = -1;
-  p_op.sem_flg = !IPC_NOWAIT;
-
-  if (semop(sem, &p_op, 1) == -1) {
-    int x = errno;
-    char errorbuf[255];
-    sprintf(errorbuf, "Error in down(), %d", errno);
-    perror(errorbuf);
-    exit(-1);
-  }
-}
-
-
-
-void up(int sem, int id) {
-  struct sembuf v_op;
-
-  v_op.sem_num = id;
-  v_op.sem_op = 1;
-  v_op.sem_flg = !IPC_NOWAIT;
-
-  if (semop(sem, &v_op, 1) == -1) {
-    perror("Error in up()");
-    exit(-1);
   }
 }
 
