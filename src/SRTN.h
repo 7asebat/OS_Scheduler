@@ -38,7 +38,8 @@ process *SRTN_getNextProcess(void *ds) {
  */
 int SRTN_removeProcess(void *ds, process *p) {
   pqueue *queue = (pqueue *)ds;
-  return pqueue_remove(queue, p);
+  process *dequeued = pqueue_remove(queue, p);
+  return dequeued == p ? 0 : -1;
 }
 
 /**

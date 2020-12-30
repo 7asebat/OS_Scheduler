@@ -7,8 +7,10 @@
 #include "buddy.h"
 #include "headers.h"
 #include "pcb.h"
+#include "start_queue.h"
 
 scalgorithm currentAlgorithm;
+startq startQueue;
 FILE *log_scheduler;
 FILE *log_memory;
 
@@ -23,6 +25,7 @@ size_t stat_waited = 0;
 size_t stat_n = 0;
 
 void scheduler_checkContextSwitch();
+void scheduler_checkStartQueue();
 
 /**
  * Cleans up the resources allocated by the scheduler, called prior to program exit.
@@ -163,6 +166,7 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   if (numberOfProccesses == 0)
     raise(SIGINT);
 
+  scheduler_checkStartQueue();
   scheduler_checkContextSwitch();
 }
 
@@ -223,6 +227,8 @@ int scheduler_init(int algorithm, int *msgqId_p) {
     break;
   }
 
+  startq_init(algorithm, &startQueue);
+
   int msgqId;
   msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   if (msgqId == -1) {
@@ -269,23 +275,37 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   kill(processPid, SIGTSTP);
   msgqBuffer->p.pid = processPid;
 
-  int memindex = buddy_allocate(msgqBuffer->p.memsize);
-  if (memindex == -1) {
-    // handle error
-  }
-  msgqBuffer->p.memindex = memindex;
-  int memUpperbound = buddy_upperbound(msgqBuffer->p.memsize);
-
-  fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %d to %d\n",
-          clk_get(),
-          memUpperbound,
-          msgqBuffer->p.id,
-          memindex,
-          memindex + memUpperbound);
-  fflush(log_memory);
-
   process *pcbProcessEntry = pcb_insert(&msgqBuffer->p);
-  currentAlgorithm.insertProcess(currentAlgorithm.ds, pcbProcessEntry);
+  startQueue.enqueue(startQueue.ds, pcbProcessEntry);
+
+  scheduler_checkStartQueue();
+}
+
+void scheduler_checkStartQueue() {
+  int squeue_size = startQueue.get_size(startQueue.ds);
+  for (int i = 0; i < squeue_size; i++) {
+    process *p = startQueue.getElemAt(startQueue.ds, i);
+    int memindex = buddy_allocate(p->memsize);
+    if (memindex != -1) {
+      currentAlgorithm.insertProcess(currentAlgorithm.ds, p);
+      p->memindex = memindex;
+      int memUpperbound = buddy_upperbound(p->memsize);
+
+      fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %d to %d\n",
+              clk_get(),
+              memUpperbound,
+              p->id,
+              memindex,
+              memindex + memUpperbound);
+      fflush(log_memory);
+
+      startQueue.remove(startQueue.ds, p);
+
+      break;
+    }
+  }
+
+  return;
 }
 
 #endif

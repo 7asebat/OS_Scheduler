@@ -19,7 +19,8 @@ process *HPF_getNextProcess(void *ds) {
 
 int HPF_removeProcess(void *ds, process *p) {
   pqueue *pq = (pqueue *)(ds);
-  return pqueue_remove(pq, p);
+  process *dequeued = pqueue_remove(pq, p);
+  return dequeued == p ? 0 : -1;
 }
 
 /**

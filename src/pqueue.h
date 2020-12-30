@@ -160,7 +160,7 @@ process *pqueue_dequeue(pqueue *queue) {
   return queue->buffer[queue->size];
 }
 
-int pqueue_remove(pqueue *queue, process *process) {
+process *pqueue_remove(pqueue *queue, process *process) {
   int i;
   size_t *size = &queue->size;
 
@@ -170,11 +170,11 @@ int pqueue_remove(pqueue *queue, process *process) {
       (*size)--;
       __pqueue_reheapDown(queue, i);
       break;
-      return 0;
+      return process;
     }
   }
 
-  return -1;
+  return NULL;
 }
 
 /**
@@ -191,6 +191,17 @@ int pqueue_free(pqueue *queue) {
   return 0;
 }
 
+size_t pqueue_get_size(pqueue *queue) {
+  return queue->size;
+}
+
+process *pqueue_getElemAt(pqueue *queue, int idx) {
+  if (idx >= queue->size)
+    return NULL;
+
+  return queue->buffer[idx];
+}
+
 void pqueue_log(pqueue *queue, FILE *pFile) {
   fprintf(pFile, "---------------------------------\n");
   fprintf(pFile, "clk = %d\n", clk_get());
@@ -201,4 +212,5 @@ void pqueue_log(pqueue *queue, FILE *pFile) {
   fprintf(pFile, "---------------------------------");
   fflush(pFile);
 }
+
 #endif

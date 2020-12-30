@@ -138,4 +138,15 @@ process *cqueue_remove(cqueue *queue, process *p) {
   return p;
 }
 
+size_t cqueue_get_size(cqueue *queue) {
+  return queue->occupied;
+}
+
+process *cqueue_getElemAt(cqueue *queue, int idx) {
+  if (idx >= queue->occupied)
+    return NULL;
+
+  return queue->buffer[idx];
+}
+
 #endif

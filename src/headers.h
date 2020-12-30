@@ -102,6 +102,16 @@ typedef struct scalgorithm {
   int (*free)(void *ds);
 } scalgorithm;
 
+typedef struct startq {
+  void *ds;
+
+  int (*enqueue)(void *ds, process *p);
+  process *(*dequeue)(void *ds);
+  process *(*remove)(void *ds, process *p);
+  size_t (*get_size)(void *ds);
+  process *(*getElemAt)(void *ds, int idx);
+} startq;
+
 typedef struct {
   long mtype;
   process p;
