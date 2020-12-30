@@ -7,6 +7,7 @@ void clearResources(int);
 
 cqueue processQueue;  //Processes queue
 int selectedAlgorithm;
+int numberOfProccesses;
 pid_t clkPid, schedulerPid;
 
 void parseInput(char *fn) {
@@ -15,31 +16,20 @@ void parseInput(char *fn) {
     perror("Error opening the input file");
     exit(1);
   }
-
   char chunk[128];
   while (fgets(chunk, sizeof(chunk), iFile) != NULL) {
-    if (chunk[0] == '#') continue;
-
+    if (chunk[0] == '#')
+      continue;
     char *token = strtok(chunk, "\t");
-    int data[5], index = 0;
-
+    int data[4], index = 0;
     // loop through the string to extract all other tokens
     do {
       data[index] = atoi(token);
       token = strtok(NULL, "\t");
       index++;
     } while (token != NULL);
-
     process *pTemp = (process *)malloc(sizeof(process));
-    *pTemp = (process){
-      .id = data[0],
-      .arrival = data[1],
-      .runtime = data[2],
-      .remaining = data[2],
-      .priority = data[3],
-      .memsize = data[4],
-    };
-
+    pTemp->id = data[0], pTemp->arrival = data[1], pTemp->remaining = data[2], pTemp->runtime = data[2], pTemp->priority = data[3];
     cqueue_enqueue(&processQueue, pTemp);
   }
 }
@@ -72,7 +62,11 @@ void startProcesses() {
       char selectedAlgorithmChar[5];
       sprintf(selectedAlgorithmChar, "%d", selectedAlgorithm);
       printf("forking scheduler.out now\n");
-      execl("bin/scheduler.out", "scheduler.out", selectedAlgorithmChar, (char *)NULL);
+
+      char numberOfProcessesChar[5];
+      numberOfProccesses = processQueue.occupied;
+      sprintf(numberOfProcessesChar, "%d", numberOfProccesses);
+      execl("bin/scheduler.out", "scheduler.out", selectedAlgorithmChar, numberOfProcessesChar, (char *)NULL);
     }
   }
 }

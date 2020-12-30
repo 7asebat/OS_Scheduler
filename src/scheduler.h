@@ -4,13 +4,14 @@
 #include "HPF.h"
 #include "RR.h"
 #include "SRTN.h"
-#include "buddy.h"
 #include "headers.h"
 #include "pcb.h"
 
 scalgorithm currentAlgorithm;
 FILE *log_scheduler;
 FILE *log_memory;
+
+size_t numberOfProccesses = INT_MAX;
 
 size_t stat_lastUtilizationTimestep;
 size_t stat_idle = 0;
@@ -34,10 +35,10 @@ void scheduler_cleanup(int SIGNUM) {
   double stat_utilization = 1 - ((double)stat_idle / clk_get());
   double stat_avgWaited = (double)stat_waited / stat_n;
   double stat_stdWTA = sqrt(stat_nvarWTA / stat_n);
-  fprintf(log_scheduler, "CPU utilization = %f%%\n", stat_utilization * 100);
-  fprintf(log_scheduler, "Avg WTA = %f\n", stat_meanWTA);
-  fprintf(log_scheduler, "Avg Waiting = %f\n", stat_waited);
-  fprintf(log_scheduler, "Std WTA = %f\n", stat_stdWTA);
+  fprintf(log_scheduler, "CPU utilization = %.2f%%\n", stat_utilization * 100);
+  fprintf(log_scheduler, "Avg WTA = %.2f\n", stat_meanWTA);
+  fprintf(log_scheduler, "Avg Waiting = %.2f\n", stat_avgWaited);
+  fprintf(log_scheduler, "Std WTA = %.2f\n", stat_stdWTA);
   fflush(log_scheduler);
   fclose(log_scheduler);
 
@@ -79,12 +80,14 @@ void scheduler_resumeProcess(process *p) {
   runningProcess = p;
   if (p == NULL) return;
 
+  int currentClk = clk_get();
+
   p->status = STATUS_RUNNING;
   kill(p->pid, SIGCONT);
 
   bool started = (p->remaining == p->runtime);
   fprintf(log_scheduler, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
-          clk_get(),
+          currentClk,
           p->id,
           (started) ? "started" : "resumed",
           p->arrival,
@@ -93,8 +96,8 @@ void scheduler_resumeProcess(process *p) {
           p->waiting);
   fflush(log_scheduler);
 
-  stat_idle += clk_get() - stat_lastUtilizationTimestep;
-  stat_lastUtilizationTimestep = clk_get();
+  stat_idle += currentClk - stat_lastUtilizationTimestep;
+  stat_lastUtilizationTimestep = currentClk;
 }
 
 /**
@@ -113,11 +116,13 @@ void scheduler_processTerminationHandler(int SIGNUM) {
     }
   }
 
+  int currentClk = clk_get();
+
   process *p = pcb_getProcessByPID(exitedProcessPid);
   currentAlgorithm.removeProcess(currentAlgorithm.ds, p);
 
   stat_n++;
-  size_t TA = clk_get() - p->arrival;
+  size_t TA = currentClk - p->arrival;
   double WTA = TA / (double)p->runtime;
 
   double meanWTA = stat_meanWTA;
@@ -127,10 +132,10 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   stat_nvarWTA = nvarWTA + (WTA - meanWTA) * (WTA - stat_meanWTA);
 
   stat_waited += p->waiting;
-  stat_lastUtilizationTimestep = clk_get();
+  stat_lastUtilizationTimestep = currentClk;
 
   fprintf(log_scheduler, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
-          clk_get(),
+          currentClk,
           p->id,
           p->arrival,
           p->runtime,
@@ -152,6 +157,11 @@ void scheduler_processTerminationHandler(int SIGNUM) {
 
   pcb_remove(p);
   runningProcess = NULL;
+
+  numberOfProccesses--;
+  if (numberOfProccesses == 0)
+    raise(SIGINT);
+
   scheduler_checkContextSwitch();
 }
 
@@ -176,13 +186,13 @@ void scheduler_checkContextSwitch() {
  * @return msqId
  */
 int scheduler_init(int algorithm, int *msgqId_p) {
+  signal(SIGINT, scheduler_cleanup);
   log_scheduler = fopen("logs/scheduler.log", "w");
   log_memory = fopen("logs/memory.log", "w");
 
   fputs("#At time x process y state arr w total z remain y wait k\n", log_scheduler);
   fflush(log_scheduler);
 
-  // Latch the termination handler
   struct sigaction act;
   act.sa_handler = scheduler_processTerminationHandler;
   sigemptyset(&act.sa_mask);
@@ -193,10 +203,9 @@ int scheduler_init(int algorithm, int *msgqId_p) {
   }
 
   // Latch the cleanup handler
-  signal(SIGINT, scheduler_cleanup);
 
   clk_init();
-  stat_lastUtilizationTimestep = 0;
+  stat_lastUtilizationTimestep = 1;
   pcb_init(100);
 
   switch (algorithm) {
@@ -222,8 +231,6 @@ int scheduler_init(int algorithm, int *msgqId_p) {
 
   *msgqId_p = msgqId;
 
-  // Initialize the memory allocation system
-  buddy_init();
   return 0;
 }
 
@@ -249,9 +256,6 @@ int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer) {
  * Creates a new stopped process and logs its arrival.
  */
 void scheduler_createProcess(msgBuf *msgqBuffer) {
-  fprintf(log_scheduler, "Process received at clock %d, id is %zu\n", clk_get(), msgqBuffer->p.id);
-  fflush(log_scheduler);
-
   int processPid = fork();
   if (processPid == 0) {
     char pRemainingTime[10];
