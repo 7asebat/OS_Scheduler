@@ -168,15 +168,15 @@ void scheduler_processTerminationHandler(int SIGNUM) {
 
   process *loaded = memload_tryLoad(&mload);
 
-  memUpperbound = buddy_upperbound(loaded->memsize);
-
   if (loaded != NULL) {
+    size_t memindex = loaded->memindex;
+    size_t memUpperbound = buddy_upperbound(loaded->memsize);
     fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %zu to %zu\n",
             clk_get(),
             memUpperbound,
             loaded->id,
-            loaded->memindex,
-            loaded->memindex + memUpperbound);
+            memindex,
+            memindex + memUpperbound);
     fflush(log_memory);
 
     currentAlgorithm.insertProcess(currentAlgorithm.ds, loaded);
@@ -291,9 +291,6 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
 
   kill(processPid, SIGTSTP);
   msgqBuffer->p.pid = processPid;
-
-  int memUpperbound = buddy_upperbound(msgqBuffer->p.memsize);
-
   process *pcbProcessEntry = pcb_insert(&msgqBuffer->p);
 
   memload_insert(&mload, pcbProcessEntry);
@@ -301,12 +298,15 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   process *loaded = memload_tryLoad(&mload);
 
   if (loaded != NULL) {
+    size_t memindex = loaded->memindex;
+    size_t memUpperbound = buddy_upperbound(loaded->memsize);
+
     fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %zu to %zu\n",
             clk_get(),
             memUpperbound,
-            msgqBuffer->p.id,
-            loaded->memindex,
-            loaded->memindex + memUpperbound);
+            loaded->id,
+            memindex,
+            memindex + memUpperbound);
     fflush(log_memory);
     currentAlgorithm.insertProcess(currentAlgorithm.ds, loaded);
   }
