@@ -21,7 +21,7 @@ void parseInput(char *fn) {
     if (chunk[0] == '#')
       continue;
     char *token = strtok(chunk, "\t");
-    int data[4], index = 0;
+    int data[5], index = 0;
     // loop through the string to extract all other tokens
     do {
       data[index] = atoi(token);
@@ -29,7 +29,14 @@ void parseInput(char *fn) {
       index++;
     } while (token != NULL);
     process *pTemp = (process *)malloc(sizeof(process));
-    pTemp->id = data[0], pTemp->arrival = data[1], pTemp->remaining = data[2], pTemp->runtime = data[2], pTemp->priority = data[3];
+    *pTemp = (process){
+      .id = data[0],
+      .arrival = data[1],
+      .runtime = data[2],
+      .remaining = data[2],
+      .priority = data[3],
+      .memsize = data[4],
+    };
     cqueue_enqueue(&processQueue, pTemp);
   }
 }
