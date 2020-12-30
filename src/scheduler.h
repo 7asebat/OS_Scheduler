@@ -13,7 +13,7 @@ FILE *log_scheduler;
 size_t numberOfProccesses = INT_MAX;
 
 size_t stat_lastUtilizationTimestep;
-size_t stat_idle = 1;
+size_t stat_idle = 0;
 
 double stat_nvarWTA = 0;
 double stat_meanWTA = 0;
@@ -79,12 +79,14 @@ void scheduler_resumeProcess(process *p) {
   runningProcess = p;
   if (p == NULL) return;
 
+  int currentClk = clk_get();
+
   p->status = STATUS_RUNNING;
   kill(p->pid, SIGCONT);
 
   bool started = (p->remaining == p->runtime);
   fprintf(log_scheduler, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
-          clk_get(),
+          currentClk,
           p->id,
           (started) ? "started" : "resumed",
           p->arrival,
@@ -93,8 +95,8 @@ void scheduler_resumeProcess(process *p) {
           p->waiting);
   fflush(log_scheduler);
 
-  stat_idle += clk_get() - stat_lastUtilizationTimestep;
-  stat_lastUtilizationTimestep = clk_get();
+  stat_idle += currentClk - stat_lastUtilizationTimestep;
+  stat_lastUtilizationTimestep = currentClk;
 }
 
 /**
@@ -113,11 +115,13 @@ void scheduler_processTerminationHandler(int SIGNUM) {
     }
   }
 
+  int currentClk = clk_get();
+
   process *p = pcb_getProcessByPID(exitedProcessPid);
   currentAlgorithm.removeProcess(currentAlgorithm.ds, p);
 
   stat_n++;
-  size_t TA = clk_get() - p->arrival;
+  size_t TA = currentClk - p->arrival;
   double WTA = TA / (double)p->runtime;
 
   double meanWTA = stat_meanWTA;
@@ -127,10 +131,10 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   stat_nvarWTA = nvarWTA + (WTA - meanWTA) * (WTA - stat_meanWTA);
 
   stat_waited += p->waiting;
-  stat_lastUtilizationTimestep = clk_get();
+  stat_lastUtilizationTimestep = currentClk;
 
   fprintf(log_scheduler, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
-          clk_get(),
+          currentClk,
           p->id,
           p->arrival,
           p->runtime,
@@ -171,6 +175,7 @@ void scheduler_checkContextSwitch() {
  * @return msqId
  */
 int scheduler_init(int algorithm, int *msgqId_p) {
+  signal(SIGINT, scheduler_cleanup);
   log_scheduler = fopen("logs/scheduler.log", "w");
 
   fputs("#At time x process y state arr w total z remain y wait k\n", log_scheduler);
@@ -186,10 +191,9 @@ int scheduler_init(int algorithm, int *msgqId_p) {
   }
 
   // Latch the cleanup handler
-  signal(SIGINT, scheduler_cleanup);
 
   clk_init();
-  stat_lastUtilizationTimestep = 0;
+  stat_lastUtilizationTimestep = 1;
   pcb_init(100);
 
   switch (algorithm) {
