@@ -1,3 +1,5 @@
+#ifndef MEMLOAD_H
+#define MEMLOAD_H
 #include "buddy.h"
 #include "cqueue.h"
 #include "headers.h"
@@ -37,6 +39,7 @@ process* __memload_SRTN_canLoad(cqueue* waitingQueue) {
 
 process* __memload_HPF_canLoad(cqueue* waitingQueue) {
   process* bestFound = NULL;
+
   for (int i = 0; i < waitingQueue->occupied; i++) {
     if ((bestFound == NULL || (waitingQueue->buffer[i]->priority < bestFound->priority)) && buddy_check(waitingQueue->buffer[i]->memsize))
       bestFound = waitingQueue->buffer[i];
@@ -51,6 +54,7 @@ process* __memload_HPF_canLoad(cqueue* waitingQueue) {
 }
 
 void memload_init(memload* mload, scalgorithm* currentAlgorithm) {
+  mload->waitingQueue = (cqueue*)malloc(sizeof(cqueue));
   cqueue_create(mload->waitingQueue, WAITING_QUEUE_SIZE);
 
   switch (currentAlgorithm->type) {
@@ -93,3 +97,5 @@ process* memload_tryLoad(memload* mload) {
 int memload_free(memload* mload) {
   return cqueue_free(mload->waitingQueue);
 }
+
+#endif

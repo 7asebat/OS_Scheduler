@@ -31,6 +31,11 @@ int buddy_upperbound(int b) {
 
 bool buddy_check(int bytes) {
   // Get appropriate size
+
+  FILE* debugLog = fopen("logs/debug.log", "w");
+  fprintf(debugLog, "here \n");
+  fflush(debugLog);
+
   int size = buddy_upperbound(bytes);
 
   int start = 0, next;

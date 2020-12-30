@@ -171,7 +171,7 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   if (loaded != NULL) {
     size_t memindex = loaded->memindex;
     size_t memUpperbound = buddy_upperbound(loaded->memsize);
-    fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %zu to %zu\n",
+    fprintf(log_memory, "At time %d allocated %zu bytes for process %zu from %zu to %zu\n",
             clk_get(),
             memUpperbound,
             loaded->id,
@@ -257,6 +257,7 @@ int scheduler_init(int algorithm, int *msgqId_p) {
 
   // Initialize the memory allocation system
   buddy_init();
+
   return 0;
 }
 
@@ -301,7 +302,7 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
     size_t memindex = loaded->memindex;
     size_t memUpperbound = buddy_upperbound(loaded->memsize);
 
-    fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %zu to %zu\n",
+    fprintf(log_memory, "At time %d allocated %zu bytes for process %zu from %zu to %zu\n",
             clk_get(),
             memUpperbound,
             loaded->id,

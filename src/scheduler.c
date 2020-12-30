@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
   msgqBuffer.mtype = 1;
 
   int timestep, previousTS = -1;
+
   while (1) {
     timestep = clk_get();
     // Check if new processes have been received
