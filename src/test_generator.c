@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
 
   pData.arrivaltime = 1;
   for (int i = 1; i <= no; i++) {
-    //generate Data Randomly
-    //[min-max] = rand() % (max_number + 1 - minimum_number) + minimum_number
+    // Generate data randomly
+    // [min, max) = rand() % (max - min) + min
     pData.id = i;
     pData.arrivaltime += rand() % (11);  //processes arrives in order
     pData.runningtime = rand() % (30);

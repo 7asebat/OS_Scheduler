@@ -37,7 +37,7 @@ int HPF_init(scalgorithm *runningAlgorithm) {
   pqueue *queue = (pqueue *)malloc(sizeof(pqueue));
   pqueue_create(queue, DS_MAX_SIZE, pqueue_pcompare);
 
-  *runningAlgorithm = (scalgorithm) {
+  *runningAlgorithm = (scalgorithm){
     queue,
     HPF_insertProcess,
     HPF_mustPreempt,
