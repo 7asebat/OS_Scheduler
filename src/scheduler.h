@@ -4,6 +4,7 @@
 #include "HPF.h"
 #include "RR.h"
 #include "SRTN.h"
+#include "buddy.h"
 #include "headers.h"
 #include "pcb.h"
 
@@ -231,6 +232,8 @@ int scheduler_init(int algorithm, int *msgqId_p) {
 
   *msgqId_p = msgqId;
 
+  // Initialize the memory allocation system
+  buddy_init();
   return 0;
 }
 
