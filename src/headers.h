@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <semaphore.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -34,7 +35,7 @@
 #define DS_MAX_SIZE 100
 ///==============================
 //don't mess with this variable//
-int *shmaddr;                  //
+int *shmaddr;  //
 //===============================
 
 int clk_get() {
