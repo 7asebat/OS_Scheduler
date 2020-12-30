@@ -16,7 +16,8 @@ int main(int argc, char *argv[]) {
     // Check if new processes have been received
     if (scheduler_getMessage(msgqId, &msgqBuffer)) {
       // No process was received
-    } else {
+    }
+    else {
       // Create process
       scheduler_createProcess(&msgqBuffer);
 

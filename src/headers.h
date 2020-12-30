@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <semaphore.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -34,7 +35,7 @@
 #define DS_MAX_SIZE 100
 ///==============================
 //don't mess with this variable//
-int *shmaddr;                  //
+int *shmaddr;  //
 //===============================
 
 int clk_get() {
@@ -73,11 +74,11 @@ void clk_destroy(bool terminateAll) {
 typedef struct process {
   size_t arrival;
   size_t runtime;
+  size_t priority;
 
   size_t remaining;
   size_t waiting;
 
-  size_t priority;
   size_t status;
   size_t id;
   size_t pid;
@@ -88,7 +89,6 @@ process *runningProcess = NULL;
 #define ALGORITHM_HPF 1
 #define ALGORITHM_SRTN 2
 #define ALGORITHM_RR 3
-
 
 typedef struct scalgorithm {
   void *ds;
@@ -106,4 +106,3 @@ typedef struct {
 } msgBuf;
 
 #endif
-

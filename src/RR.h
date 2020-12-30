@@ -93,7 +93,7 @@ int RR_init(scalgorithm *runningAlgorithm) {
   cqueue *queue = (cqueue *)malloc(sizeof(cqueue));
   cqueue_create(queue, DS_MAX_SIZE);
 
-  *runningAlgorithm = (scalgorithm) {
+  *runningAlgorithm = (scalgorithm){
     queue,
     RR_insertProcess,
     RR_mustPreempt,
@@ -105,4 +105,3 @@ int RR_init(scalgorithm *runningAlgorithm) {
 }
 
 #endif
-

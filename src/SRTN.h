@@ -72,7 +72,7 @@ int SRTN_init(scalgorithm *runningAlgorithm) {
   pqueue *queue = (pqueue *)malloc(sizeof(pqueue));
   pqueue_create(queue, DS_MAX_SIZE, &SRTN_compare);
 
-  *runningAlgorithm = (scalgorithm) {
+  *runningAlgorithm = (scalgorithm){
     queue,
     SRTN_insertProcess,
     SRTN_mustPreempt,

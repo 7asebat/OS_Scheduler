@@ -10,6 +10,14 @@
 scalgorithm currentAlgorithm;
 FILE *log_scheduler;
 
+size_t stat_lastUtilizationTimestep;
+size_t stat_idle = 0;
+
+double stat_nvarWTA = 0;
+double stat_meanWTA = 0;
+size_t stat_waited = 0;
+size_t stat_n = 0;
+
 void scheduler_checkContextSwitch();
 
 /**
@@ -17,7 +25,22 @@ void scheduler_checkContextSwitch();
  */
 void scheduler_cleanup(int SIGNUM) {
   fclose(log_scheduler);
+
+  // Log stats
+  log_scheduler = fopen("logs/scheduler.perf", "w");
+  double stat_utilization = 1 - ((double)stat_idle / clk_get());
+  double stat_avgWaited = (double)stat_waited / stat_n;
+  double stat_stdWTA = sqrt(stat_nvarWTA / stat_n);
+  fprintf(log_scheduler, "CPU utilization = %f%%\n", stat_utilization * 100);
+  fprintf(log_scheduler, "Avg WTA = %f\n", stat_meanWTA);
+  fprintf(log_scheduler, "Avg Waiting = %f\n", stat_waited);
+  fprintf(log_scheduler, "Std WTA = %f\n", stat_stdWTA);
+  fflush(log_scheduler);
+  fclose(log_scheduler);
+
   pcb_free();
+
+  currentAlgorithm.free(currentAlgorithm.ds);
 
   int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   msgctl(msgqId, IPC_RMID, (struct msqid_ds *)0);
@@ -25,8 +48,6 @@ void scheduler_cleanup(int SIGNUM) {
   clk_destroy(false);
 
   signal(SIGINT, scheduler_cleanup);
-
-  currentAlgorithm.free(currentAlgorithm.ds);
 }
 
 /**
@@ -45,6 +66,8 @@ void scheduler_preemptProcess(process *p) {
           p->remaining,
           p->waiting);
   fflush(log_scheduler);
+
+  stat_lastUtilizationTimestep = clk_get();
 }
 
 /**
@@ -54,13 +77,10 @@ void scheduler_resumeProcess(process *p) {
   runningProcess = p;
   if (p == NULL) return;
 
-  int pid = p->pid;
   p->status = STATUS_RUNNING;
-
-  kill(pid, SIGCONT);
+  kill(p->pid, SIGCONT);
 
   bool started = (p->remaining == p->runtime);
-
   fprintf(log_scheduler, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
           clk_get(),
           p->id,
@@ -70,6 +90,9 @@ void scheduler_resumeProcess(process *p) {
           p->remaining,
           p->waiting);
   fflush(log_scheduler);
+
+  stat_idle += clk_get() - stat_lastUtilizationTimestep;
+  stat_lastUtilizationTimestep = clk_get();
 }
 
 /**
@@ -82,15 +105,27 @@ void scheduler_processTerminationHandler(int SIGNUM) {
 
   int exitedProcessPid = wait(&process_status);
   if (WIFEXITED(process_status)) {
-    int exit_code = WEXITSTATUS(process_status);
-    printf("process %d: exited with exit code %d\n", exitedProcessPid, exit_code);
+    int exitCode = WEXITSTATUS(process_status);
+    if (exitCode) {
+      // Handle error
+    }
   }
-  process *p = pcb_getProcessByPID(exitedProcessPid);
 
+  process *p = pcb_getProcessByPID(exitedProcessPid);
   currentAlgorithm.removeProcess(currentAlgorithm.ds, p);
 
+  stat_n++;
   size_t TA = clk_get() - p->arrival;
   double WTA = TA / (double)p->runtime;
+
+  double meanWTA = stat_meanWTA;
+  stat_meanWTA = (WTA + (stat_n - 1) * meanWTA) / stat_n;
+
+  double nvarWTA = stat_nvarWTA;
+  stat_nvarWTA = nvarWTA + (WTA - meanWTA) * (WTA - stat_meanWTA);
+
+  stat_waited += p->waiting;
+  stat_lastUtilizationTimestep = clk_get();
 
   fprintf(log_scheduler, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
           clk_get(),
@@ -147,6 +182,7 @@ int scheduler_init(int algorithm, int *msgqId_p) {
   signal(SIGINT, scheduler_cleanup);
 
   clk_init();
+  stat_lastUtilizationTimestep = 0;
   pcb_init(100);
 
   switch (algorithm) {
@@ -187,7 +223,8 @@ int scheduler_getMessage(int msgqId, msgBuf *msgqBuffer) {
       exit(-1);
     }
     return -1;
-  } else {
+  }
+  else {
     return 0;
   }
 }

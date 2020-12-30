@@ -50,7 +50,8 @@ void startProcesses() {
   }
   if (clkPid == 0) {
     execl("bin/clk.out", "clk.out", (char *)NULL);
-  } else {
+  }
+  else {
     schedulerPid = fork();
     if (schedulerPid < 0) {
       perror("Error while forking");
