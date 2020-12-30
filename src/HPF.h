@@ -44,7 +44,7 @@ int HPF_init(scalgorithm *runningAlgorithm) {
     HPF_getNextProcess,
     HPF_removeProcess,
     HPF_free,
-  };
+    ALGORITHM_HPF};
 
   return 0;
 }
