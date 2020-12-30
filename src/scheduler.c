@@ -2,7 +2,10 @@
 
 int main(int argc, char *argv[]) {
   // Initialize the scheduler
-  int algorithm = argv[1][0] - '0';
+  int algorithm = atoi(argv[1]);
+  if (argc > 2)
+    numberOfProccesses = atoi(argv[2]);
+
   int msgqId;
   scheduler_init(algorithm, &msgqId);
 

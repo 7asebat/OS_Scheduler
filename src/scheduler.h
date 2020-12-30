@@ -10,8 +10,10 @@
 scalgorithm currentAlgorithm;
 FILE *log_scheduler;
 
+size_t numberOfProccesses = INT_MAX;
+
 size_t stat_lastUtilizationTimestep;
-size_t stat_idle = 0;
+size_t stat_idle = 1;
 
 double stat_nvarWTA = 0;
 double stat_meanWTA = 0;
@@ -31,10 +33,10 @@ void scheduler_cleanup(int SIGNUM) {
   double stat_utilization = 1 - ((double)stat_idle / clk_get());
   double stat_avgWaited = (double)stat_waited / stat_n;
   double stat_stdWTA = sqrt(stat_nvarWTA / stat_n);
-  fprintf(log_scheduler, "CPU utilization = %f%%\n", stat_utilization * 100);
-  fprintf(log_scheduler, "Avg WTA = %f\n", stat_meanWTA);
-  fprintf(log_scheduler, "Avg Waiting = %f\n", stat_waited);
-  fprintf(log_scheduler, "Std WTA = %f\n", stat_stdWTA);
+  fprintf(log_scheduler, "CPU utilization = %.2f%%\n", stat_utilization * 100);
+  fprintf(log_scheduler, "Avg WTA = %.2f\n", stat_meanWTA);
+  fprintf(log_scheduler, "Avg Waiting = %.2f\n", stat_avgWaited);
+  fprintf(log_scheduler, "Std WTA = %.2f\n", stat_stdWTA);
   fflush(log_scheduler);
   fclose(log_scheduler);
 
@@ -140,6 +142,11 @@ void scheduler_processTerminationHandler(int SIGNUM) {
 
   runningProcess = NULL;
   pcb_remove(p);
+
+  numberOfProccesses--;
+  if (numberOfProccesses == 0)
+    raise(SIGINT);
+
   scheduler_checkContextSwitch();
 }
 

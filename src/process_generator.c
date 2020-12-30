@@ -7,6 +7,7 @@ void clearResources(int);
 
 cqueue processQueue;  //Processes queue
 int selectedAlgorithm;
+int numberOfProccesses;
 pid_t clkPid, schedulerPid;
 
 void parseInput(char *fn) {
@@ -61,7 +62,11 @@ void startProcesses() {
       char selectedAlgorithmChar[5];
       sprintf(selectedAlgorithmChar, "%d", selectedAlgorithm);
       printf("forking scheduler.out now\n");
-      execl("bin/scheduler.out", "scheduler.out", selectedAlgorithmChar, (char *)NULL);
+
+      char numberOfProcessesChar[5];
+      numberOfProccesses = processQueue.occupied;
+      sprintf(numberOfProcessesChar, "%d", numberOfProccesses);
+      execl("bin/scheduler.out", "scheduler.out", selectedAlgorithmChar, numberOfProcessesChar, (char *)NULL);
     }
   }
 }
