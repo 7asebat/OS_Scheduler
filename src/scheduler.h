@@ -148,7 +148,7 @@ void scheduler_processTerminationHandler(int SIGNUM) {
 
   buddy_free(p->memindex, p->memsize);
   int memUpperbound = buddy_upperbound(p->memsize);
-  fprintf(log_memory, "At time %d freed %d bytes from process %zu from %d to %d\n",
+  fprintf(log_memory, "At time %d freed %d bytes from process %zu from %zu to %zu\n",
           clk_get(),
           memUpperbound,
           p->id,
