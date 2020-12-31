@@ -8,14 +8,12 @@
 #define PAR(i) ((i - 1) / 2)
 
 typedef struct pqueue {
-  size_t capacity;
+  size_t CAPACITY;
   size_t size;
 
   bool (*compare)(process *, process *);
   process **buffer;
 } pqueue;
-
-pqueue PRIORITY_QUEUE_DEFAULT = {0, 0, NULL, NULL};
 
 void pqueue_print(pqueue *pq) {
   for (int i = 0; i < pq->size; i++) {
@@ -64,8 +62,8 @@ int pqueue_create(pqueue *queue, size_t capacity, bool (*compare)(process *, pro
     queue->compare = &pqueue_pcompare;
 
   queue->size = 0;
-  queue->capacity = capacity;
-  queue->buffer = (process **)calloc(queue->capacity, sizeof(process *));
+  queue->CAPACITY = capacity;
+  queue->buffer = (process **)calloc(queue->CAPACITY, sizeof(process *));
   return 0;
 }
 
@@ -128,7 +126,7 @@ void __pqueue_reheapDown(pqueue *queue, int i) {
  * @return 0 on success, -1 on failure
  */
 int pqueue_enqueue(pqueue *queue, process *p) {
-  if (queue->capacity == queue->size)
+  if (queue->CAPACITY == queue->size)
     return -1;
   size_t *size = &queue->size;
 

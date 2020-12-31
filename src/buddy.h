@@ -1,15 +1,17 @@
 #ifndef BUDDY_H
 #define BUDDY_H
 
+#define __BUDDY_CAPACITY 1024
+
 struct {
-  short occupied[1024];
-  short next[1024];
-} buddy;
+  char occupied[__BUDDY_CAPACITY];
+  short next[__BUDDY_CAPACITY];
+} __buddy_block;
 
 void buddy_init() {
-  for (int i = 0; i < 1024; i++) {
-    buddy.occupied[i] = 0;
-    buddy.next[i] = i + 1024;
+  for (int i = 0; i < __BUDDY_CAPACITY; i++) {
+    __buddy_block.occupied[i] = 0;
+    __buddy_block.next[i] = i + __BUDDY_CAPACITY;
   }
 }
 
@@ -37,23 +39,23 @@ int buddy_allocate(int bytes) {
   int size = buddy_upperbound(bytes);
 
   int start = 0, next;
-  int dmin = __INT_MAX__, minimum = 1024;
+  int dmin = __INT_MAX__, minimum = __BUDDY_CAPACITY;
 
-  while (start < 1024) {
+  while (start < __BUDDY_CAPACITY) {
     // Find next available segment
-    if (buddy.occupied[start]) {
-      if (buddy.next[start] % size) {
+    if (__buddy_block.occupied[start]) {
+      if (__buddy_block.next[start] % size) {
         start += size;
       }
       else {
-        start = buddy.next[start];
+        start = __buddy_block.next[start];
       }
       continue;
     }
 
     // Found available segment
     // Find minimum segment
-    next = buddy.next[start];
+    next = __buddy_block.next[start];
     if (next - start >= size && next - start < dmin) {
       dmin = next - start;
       minimum = start;
@@ -62,14 +64,14 @@ int buddy_allocate(int bytes) {
     start += size;
   }
 
-  if (minimum < 1024) {
-    next = buddy.next[minimum];
+  if (minimum < __BUDDY_CAPACITY) {
+    next = __buddy_block.next[minimum];
 
-    if (!buddy.occupied[minimum + size])
-      buddy.next[minimum + size] = buddy.next[minimum];  // Link with old next
+    if (!__buddy_block.occupied[minimum + size])
+      __buddy_block.next[minimum + size] = __buddy_block.next[minimum];  // Link with old next
 
-    buddy.occupied[minimum] = 1;
-    buddy.next[minimum] = minimum + size;
+    __buddy_block.occupied[minimum] = 1;
+    __buddy_block.next[minimum] = minimum + size;
     return minimum;
   }
 
@@ -77,29 +79,29 @@ int buddy_allocate(int bytes) {
 }
 
 int buddy_free(int index, int bytes) {
-  if (!buddy.occupied[index]) return -1;
+  if (!__buddy_block.occupied[index]) return -1;
 
   // Clear
-  buddy.occupied[index] = 0;
+  __buddy_block.occupied[index] = 0;
 
   // Get appropriate size
   int size = buddy_upperbound(bytes);
 
   // Check if mergable with next segment
-  if ((index / size % 2 == 0) && (!buddy.occupied[index + size])) {
+  if ((index / size % 2 == 0) && (!__buddy_block.occupied[index + size])) {
     // Link with next
-    buddy.next[index] = buddy.next[index + size];
+    __buddy_block.next[index] = __buddy_block.next[index + size];
 
     // Erase next
-    buddy.next[index + size] = index + size + 1024;
+    __buddy_block.next[index + size] = index + size + __BUDDY_CAPACITY;
   }
   // Check if mergable with previous segment
-  else if ((index >= size) && (!buddy.occupied[index - size])) {
+  else if ((index >= size) && (!__buddy_block.occupied[index - size])) {
     // Link with next
-    buddy.next[index - size] = buddy.next[index];
+    __buddy_block.next[index - size] = __buddy_block.next[index];
 
     // Erase next
-    buddy.next[index] = index + 1024;
+    __buddy_block.next[index] = index + __BUDDY_CAPACITY;
   }
 
   return 0;

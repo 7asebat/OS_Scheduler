@@ -71,7 +71,7 @@ void startProcesses() {
       printf("forking scheduler.out now\n");
 
       char numberOfProcessesChar[5];
-      numberOfProccesses = processQueue.occupied;
+      numberOfProccesses = processQueue.size;
       sprintf(numberOfProcessesChar, "%d", numberOfProccesses);
       execl(BIN_DIRECTORY"/scheduler.out", "scheduler.out", selectedAlgorithmChar, numberOfProcessesChar, (char *)NULL);
     }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
   clk_init();
 
-  while (processQueue.occupied != 0) {
+  while (processQueue.size != 0) {
     int currClk = clk_get();
     process *temp = cqueue_front(&processQueue);
     if (temp->arrival <= currClk) {
