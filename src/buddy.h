@@ -40,10 +40,7 @@ int buddy_allocate(int bytes) {
   int dmin = __INT_MAX__, minimum = 1024;
 
   while (start < 1024) {
-    // Next spot
-    next = buddy.next[start];
-
-    // Find next available delimiter
+    // Find next available segment
     if (buddy.occupied[start]) {
       if (buddy.next[start] % size) {
         start += size;
@@ -54,14 +51,14 @@ int buddy_allocate(int bytes) {
       continue;
     }
 
-    // Found empty segment
+    // Found available segment
+    // Find minimum segment
     next = buddy.next[start];
-
-    // Occupied, next is size steps afterwards
     if (next - start >= size && next - start < dmin) {
       dmin = next - start;
       minimum = start;
     }
+
     start += size;
   }
 
@@ -75,6 +72,7 @@ int buddy_allocate(int bytes) {
     buddy.next[minimum] = minimum + size;
     return minimum;
   }
+
   return -1;
 }
 
@@ -87,17 +85,23 @@ int buddy_free(int index, int bytes) {
   // Get appropriate size
   int size = buddy_upperbound(bytes);
 
-  // Check if mergable with next spot
-  if (index / size % 2 == 0) {
+  // Check if mergable with next segment
+  if ((index / size % 2 == 0) && (!buddy.occupied[index + size])) {
     // Link with next
-    if (!buddy.occupied[index + size])
-      buddy.next[index] = buddy.next[index + size];
+    buddy.next[index] = buddy.next[index + size];
+
+    // Erase next
+    buddy.next[index + size] = index + size + 1024;
   }
-  else if (index >= size) {
+  // Check if mergable with previous segment
+  else if ((index >= size) && (!buddy.occupied[index - size])) {
     // Link with next
-    if (!buddy.occupied[index - size])
-      buddy.next[index - size] = buddy.next[index];
+    buddy.next[index - size] = buddy.next[index];
+
+    // Erase next
+    buddy.next[index] = index + 1024;
   }
+
   return 0;
 }
 #endif

@@ -57,7 +57,7 @@ void startProcesses() {
     exit(1);
   }
   if (clkPid == 0) {
-    execl("bin/clk.out", "clk.out", (char *)NULL);
+    execl(BIN_DIRECTORY"/clk.out", "clk.out", (char *)NULL);
   }
   else {
     schedulerPid = fork();
@@ -73,7 +73,7 @@ void startProcesses() {
       char numberOfProcessesChar[5];
       numberOfProccesses = processQueue.occupied;
       sprintf(numberOfProcessesChar, "%d", numberOfProccesses);
-      execl("bin/scheduler.out", "scheduler.out", selectedAlgorithmChar, numberOfProcessesChar, (char *)NULL);
+      execl(BIN_DIRECTORY"/scheduler.out", "scheduler.out", selectedAlgorithmChar, numberOfProcessesChar, (char *)NULL);
     }
   }
 }

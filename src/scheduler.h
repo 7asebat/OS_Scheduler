@@ -263,7 +263,7 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   if (processPid == 0) {
     char pRemainingTime[10];
     sprintf(pRemainingTime, "%zu", msgqBuffer->p.remaining);
-    execl("bin/process.out", "process.out", pRemainingTime, (char *)NULL);
+    execl(BIN_DIRECTORY"/process.out", "process.out", pRemainingTime, (char *)NULL);
   }
 
   kill(processPid, SIGTSTP);

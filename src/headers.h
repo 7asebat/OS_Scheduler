@@ -33,6 +33,11 @@
 #define MSGQKEY 200
 
 #define DS_MAX_SIZE 100
+#ifdef DEBUG_SCHEDULER
+#define BIN_DIRECTORY "debug"
+#else
+#define BIN_DIRECTORY "bin"
+#endif
 ///==============================
 //don't mess with this variable//
 int *shmaddr;  //
