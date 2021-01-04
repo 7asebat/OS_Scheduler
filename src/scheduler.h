@@ -6,9 +6,11 @@
 #include "SRTN.h"
 #include "buddy.h"
 #include "headers.h"
+#include "memload.h"
 #include "pcb.h"
 
 scalgorithm currentAlgorithm;
+memload mload;
 FILE *log_scheduler;
 FILE *log_memory;
 
@@ -46,6 +48,7 @@ void scheduler_cleanup(int SIGNUM) {
   pcb_free();
 
   currentAlgorithm.free(currentAlgorithm.ds);
+  memload_free(&mload);
 
   int msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   msgctl(msgqId, IPC_RMID, (struct msqid_ds *)0);
@@ -163,6 +166,22 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   if (numberOfProccesses == 0)
     raise(SIGINT);
 
+  process *loaded = memload_tryLoad(&mload);
+
+  if (loaded != NULL) {
+    size_t memindex = loaded->memindex;
+    size_t memUpperbound = buddy_upperbound(loaded->memsize);
+    fprintf(log_memory, "At time %d allocated %zu bytes for process %zu from %zu to %zu\n",
+            clk_get(),
+            memUpperbound,
+            loaded->id,
+            memindex,
+            memindex + memUpperbound);
+    fflush(log_memory);
+
+    currentAlgorithm.insertProcess(currentAlgorithm.ds, loaded);
+  }
+
   scheduler_checkContextSwitch();
 }
 
@@ -223,6 +242,10 @@ int scheduler_init(int algorithm, int *msgqId_p) {
     break;
   }
 
+  currentAlgorithm.type = algorithm;
+
+  memload_init(&mload, &currentAlgorithm);
+
   int msgqId;
   msgqId = msgget(MSGQKEY, 0666 | IPC_CREAT);
   if (msgqId == -1) {
@@ -234,6 +257,7 @@ int scheduler_init(int algorithm, int *msgqId_p) {
 
   // Initialize the memory allocation system
   buddy_init();
+
   return 0;
 }
 
@@ -268,24 +292,25 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
 
   kill(processPid, SIGTSTP);
   msgqBuffer->p.pid = processPid;
-
-  int memindex = buddy_allocate(msgqBuffer->p.memsize);
-  if (memindex == -1) {
-    // handle error
-  }
-  msgqBuffer->p.memindex = memindex;
-  int memUpperbound = buddy_upperbound(msgqBuffer->p.memsize);
-
-  fprintf(log_memory, "At time %d allocated %d bytes for process %zu from %d to %d\n",
-          clk_get(),
-          memUpperbound,
-          msgqBuffer->p.id,
-          memindex,
-          memindex + memUpperbound);
-  fflush(log_memory);
-
   process *pcbProcessEntry = pcb_insert(&msgqBuffer->p);
-  currentAlgorithm.insertProcess(currentAlgorithm.ds, pcbProcessEntry);
+
+  memload_insert(&mload, pcbProcessEntry);
+
+  process *loaded = memload_tryLoad(&mload);
+
+  if (loaded != NULL) {
+    size_t memindex = loaded->memindex;
+    size_t memUpperbound = buddy_upperbound(loaded->memsize);
+
+    fprintf(log_memory, "At time %d allocated %zu bytes for process %zu from %zu to %zu\n",
+            clk_get(),
+            memUpperbound,
+            loaded->id,
+            memindex,
+            memindex + memUpperbound);
+    fflush(log_memory);
+    currentAlgorithm.insertProcess(currentAlgorithm.ds, loaded);
+  }
 }
 
 #endif

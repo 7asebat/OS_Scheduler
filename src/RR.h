@@ -100,7 +100,7 @@ int RR_init(scalgorithm *runningAlgorithm) {
     RR_getNextProcess,
     RR_removeProcess,
     RR_free,
-  };
+    ALGORITHM_RR};
   return 0;
 }
 

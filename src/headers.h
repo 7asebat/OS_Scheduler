@@ -39,6 +39,7 @@
 #else
 #define BIN_DIRECTORY "bin"
 #endif
+#define WAITING_QUEUE_SIZE 100
 ///==============================
 //don't mess with this variable//
 int *shmaddr;  //
@@ -106,6 +107,7 @@ typedef struct scalgorithm {
   process *(*getNextProcess)(void *ds);
   int (*removeProcess)(void *ds, process *p);
   int (*free)(void *ds);
+  int type;
 } scalgorithm;
 
 typedef struct {

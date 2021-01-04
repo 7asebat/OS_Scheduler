@@ -79,7 +79,7 @@ int SRTN_init(scalgorithm *runningAlgorithm) {
     SRTN_getNextProcess,
     SRTN_removeProcess,
     SRTN_free,
-  };
+    ALGORITHM_SRTN};
 
   return 0;
 }

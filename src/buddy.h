@@ -31,6 +31,50 @@ int buddy_upperbound(int b) {
   return 1 << ep;
 }
 
+bool buddy_check(int bytes) {
+  // Get appropriate size
+
+  FILE* debugLog = fopen("logs/debug.log", "w");
+  fprintf(debugLog, "here \n");
+  fflush(debugLog);
+
+  int size = buddy_upperbound(bytes);
+
+  int start = 0, next;
+  int dmin = __INT_MAX__, minimum = 1024;
+
+  while (start < 1024) {
+    // Next spot
+    next = buddy.next[start];
+
+    // Find next available delimiter
+    if (buddy.occupied[start]) {
+      if (buddy.next[start] % size) {
+        start += size;
+      }
+      else {
+        start = buddy.next[start];
+      }
+      continue;
+    }
+
+    // Found empty segment
+    next = buddy.next[start];
+
+    // Occupied, next is size steps afterwards
+    if (next - start >= size && next - start < dmin) {
+      dmin = next - start;
+      minimum = start;
+    }
+    start += size;
+  }
+
+  if (minimum < 1024) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * @return index on success, -1 on failure
  */
