@@ -41,25 +41,25 @@ bool buddy_check(int bytes) {
   int size = buddy_upperbound(bytes);
 
   int start = 0, next;
-  int dmin = __INT_MAX__, minimum = 1024;
+  int dmin = __INT_MAX__, minimum = __BUDDY_CAPACITY;
 
-  while (start < 1024) {
+  while (start < __BUDDY_CAPACITY) {
     // Next spot
-    next = buddy.next[start];
+    next = __buddy_block.next[start];
 
     // Find next available delimiter
-    if (buddy.occupied[start]) {
-      if (buddy.next[start] % size) {
+    if (__buddy_block.occupied[start]) {
+      if (__buddy_block.next[start] % size) {
         start += size;
       }
       else {
-        start = buddy.next[start];
+        start = __buddy_block.next[start];
       }
       continue;
     }
 
     // Found empty segment
-    next = buddy.next[start];
+    next = __buddy_block.next[start];
 
     // Occupied, next is size steps afterwards
     if (next - start >= size && next - start < dmin) {
@@ -69,7 +69,7 @@ bool buddy_check(int bytes) {
     start += size;
   }
 
-  if (minimum < 1024) {
+  if (minimum < __BUDDY_CAPACITY) {
     return true;
   }
   return false;
