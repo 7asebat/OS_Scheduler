@@ -101,19 +101,22 @@
 ## Algorithm Explanation
   - When a process arrives, we insert it in a 'waiting' queue.
   - According to the scheduling algorithm, we check that waiting queue for candidate processes to enter our scheduling algorithm's datastructure, i.e:
-    - In SRTN: if any process in the waiting queue has less remaining time than the currently running process, it enters the SRTN's circular queue, however the older process remains allocated inthe memory.
+    - In SRTN: if any process in the waiting queue has less remaining time than the currently running process, it enters the SRTN's circular queue, however the older process remains allocated in the memory.
     - In RR: if there is a free space, the first process in the waiting queue is moved to the RR's circular queue instantly, as we will schedule it sooner or later in that same order.
     - In HPF: after the currently running process ends, we check the waiting queue for the best fit for the HPF (the one with the highest priority), this allows us to not allocate memory for unfit processes too early.
 
 <div style="page-break-after: always"></div>
+
 ## Results
   - Test case
     - ![](MemTestCase.png)
   - HPF
     - ![](MemHPF.png)
+
+<div style="page-break-after: always"></div>
+
   - SRTN
     - ![](MemSRTN.png)
-<div style="page-break-after: always"></div>
 
   - RR
     - ![](MemRR.png)
