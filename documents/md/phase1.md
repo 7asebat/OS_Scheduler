@@ -64,6 +64,9 @@
 ![](RRperf.jpg)
 
 ## Assumptions
+- General Assumptions
+  - When a process finishes, currently existing processes are scheduled before taking in any new processes.
+
 - RR
     - If a process arrives at the time the RR quanta ends, the preemption happens before that process enters, i.e. if there is one process only and the quanta ends when another one arrives, we continue running the one process only.
   
