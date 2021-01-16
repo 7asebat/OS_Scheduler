@@ -3,7 +3,6 @@
 #include "buddy.h"
 #include "cqueue.h"
 #include "headers.h"
-
 typedef struct memload {
   cqueue* waitingQueue;
   process* (*can_load)(cqueue*);
@@ -24,12 +23,13 @@ process* __memload_RR_canLoad(cqueue* waitingQueue) {
 
 process* __memload_SRTN_canLoad(cqueue* waitingQueue) {
   process* bestFound = NULL;
+
   for (int i = 0; i < waitingQueue->size; i++) {
     if ((bestFound == NULL || (waitingQueue->buffer[i]->remaining < bestFound->remaining)) && buddy_check(waitingQueue->buffer[i]->memsize))
       bestFound = waitingQueue->buffer[i];
   }
 
-  if (runningProcess == NULL || bestFound->remaining < runningProcess->remaining) {
+  if (runningProcess == NULL || bestFound != NULL && bestFound->remaining < runningProcess->remaining) {
     return bestFound;
   }
   else {
