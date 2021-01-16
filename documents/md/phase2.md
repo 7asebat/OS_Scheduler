@@ -104,13 +104,27 @@
     - In SRTN: if any process in the waiting queue has less remaining time than the currently running process, it enters the SRTN's circular queue, however the older process remains allocated inthe memory.
     - In RR: if there is a free space, the first process in the waiting queue is moved to the RR's circular queue instantly, as we will schedule it sooner or later in that same order.
     - In HPF: after the currently running process ends, we check the waiting queue for the best fit for the HPF (the one with the highest priority), this allows us to not allocate memory for unfit processes too early.
-  
+
+<div style="page-break-after: always"></div>
+## Results
+  - Test case
+    - ![](MemTestCase.png)
+  - HPF
+    - ![](MemHPF.png)
+  - SRTN
+    - ![](MemSRTN.png)
+<div style="page-break-after: always"></div>
+
+  - RR
+    - ![](MemRR.png)
+
+<div style="page-break-after: always"></div>
 
 ## Workload Distribution 
 
 | Name              | SEC: <Br> BN:   | Load                    |
 |-------------------|-----------------|-------------------------|
-| Ahmed Nasser      | SEC: 1 <BR> BN: 8  | PCB Table <br> Scheduler    <br> Memory Management Design                    |
-| Ahmed Hesham Eid  | SEC: 1 <Br> BN: 9  | Process generator <br> Scheduler <br> Memory Management Design              |
+| Ahmed Nasser      | SEC: 1 <BR> BN: 8  | PCB Table <br> Scheduler    <br> Memory Management Design <br> Phase 3                    |
+| Ahmed Hesham Eid  | SEC: 1 <Br> BN: 9  | Process generator <br> Scheduler <br> Memory Management Design  <br> Phase 3             |
 | Abdelrahman Farid | SEC: 1 <br> BN: 34 | Circular Queue <br> Scheduler <br> RR and SRTN <br> Buddy System v1 <br> Memory Management Design |
 | Youssef Walid     | SEC: 2 <Br> BN: 34 | Priority Queue <br> Scheduler <br> HPF <br> Buddy System v2 <br> Waiting queue implementation <br> Memory Management Design      |
