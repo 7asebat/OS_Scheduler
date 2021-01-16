@@ -12,7 +12,7 @@ typedef struct memload {
 process* __memload_RR_canLoad(cqueue* waitingQueue) {
   process* bestFound = NULL;
   for (int i = 0; i < waitingQueue->size; i++) {
-    if (buddy_check(waitingQueue->buffer[i]->memsize)) {
+    if (buddy_tryAllocate(waitingQueue->buffer[i]->memsize) > -1) {
       bestFound = waitingQueue->buffer[i];
       break;
     }
@@ -25,7 +25,7 @@ process* __memload_SRTN_canLoad(cqueue* waitingQueue) {
   process* bestFound = NULL;
 
   for (int i = 0; i < waitingQueue->size; i++) {
-    if ((bestFound == NULL || (waitingQueue->buffer[i]->remaining < bestFound->remaining)) && buddy_check(waitingQueue->buffer[i]->memsize))
+    if ((bestFound == NULL || (waitingQueue->buffer[i]->remaining < bestFound->remaining)) && buddy_tryAllocate(waitingQueue->buffer[i]->memsize) > -1)
       bestFound = waitingQueue->buffer[i];
   }
 
@@ -41,7 +41,7 @@ process* __memload_HPF_canLoad(cqueue* waitingQueue) {
   process* bestFound = NULL;
 
   for (int i = 0; i < waitingQueue->size; i++) {
-    if ((bestFound == NULL || (waitingQueue->buffer[i]->priority < bestFound->priority)) && buddy_check(waitingQueue->buffer[i]->memsize))
+    if ((bestFound == NULL || (waitingQueue->buffer[i]->priority < bestFound->priority)) && buddy_tryAllocate(waitingQueue->buffer[i]->memsize) > -1)
       bestFound = waitingQueue->buffer[i];
   }
 
