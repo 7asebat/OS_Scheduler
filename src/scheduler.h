@@ -12,6 +12,7 @@
 scalgorithm currentAlgorithm;
 memload mload;
 FILE *log_scheduler;
+FILE *log_perf;
 FILE *log_memory;
 
 size_t numberOfProccesses = INT_MAX;
@@ -34,16 +35,16 @@ void scheduler_cleanup(int SIGNUM) {
   fclose(log_memory);
 
   // Log stats
-  log_scheduler = fopen("logs/scheduler.perf", "w");
+  log_perf = fopen("logs/scheduler.perf", "w");
   double stat_utilization = 1 - ((double)stat_idle / clk_get());
   double stat_avgWaited = (double)stat_waited / stat_n;
   double stat_stdWTA = sqrt(stat_nvarWTA / stat_n);
-  fprintf(log_scheduler, "CPU utilization = %.2f%%\n", stat_utilization * 100);
-  fprintf(log_scheduler, "Avg WTA = %.2f\n", stat_meanWTA);
-  fprintf(log_scheduler, "Avg Waiting = %.2f\n", stat_avgWaited);
-  fprintf(log_scheduler, "Std WTA = %.2f\n", stat_stdWTA);
-  fflush(log_scheduler);
-  fclose(log_scheduler);
+  fprintf(log_perf, "CPU utilization = %.2f%%\n", stat_utilization * 100);
+  fprintf(log_perf, "Avg WTA = %.2f\n", stat_meanWTA);
+  fprintf(log_perf, "Avg Waiting = %.2f\n", stat_avgWaited);
+  fprintf(log_perf, "Std WTA = %.2f\n", stat_stdWTA);
+  fflush(log_perf);
+  fclose(log_perf);
 
   pcb_free();
 
@@ -64,7 +65,10 @@ void scheduler_preemptProcess(process *p) {
   if (p == NULL) return;
 
   p->status = STATUS_WAITING;
+
   kill(p->pid, SIGTSTP);
+
+  log_scheduler = fopen("logs/scheduler.log", "a");
   fprintf(log_scheduler, "At time %d process %zu stopped arr %zu total %zu remain %zu wait %zu\n",
           clk_get(),
           p->id,
@@ -90,6 +94,9 @@ void scheduler_resumeProcess(process *p) {
   kill(p->pid, SIGCONT);
 
   bool started = (p->remaining == p->runtime);
+
+  log_scheduler = fopen("logs/scheduler.log", "a");
+
   fprintf(log_scheduler, "At time %d process %zu %s arr %zu total %zu remain %zu wait %zu\n",
           currentClk,
           p->id,
@@ -138,6 +145,8 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   stat_waited += p->waiting;
   stat_lastUtilizationTimestep = currentClk;
 
+  log_scheduler = fopen("logs/scheduler.log", "a");
+
   fprintf(log_scheduler, "At time %d process %zu finished arr %zu total %zu remain %zu wait %zu TA %zu WTA %.2f\n",
           currentClk,
           p->id,
@@ -151,6 +160,7 @@ void scheduler_processTerminationHandler(int SIGNUM) {
 
   buddy_free(p->memindex, p->memsize);
   int memUpperbound = buddy_upperbound(p->memsize);
+
   fprintf(log_memory, "At time %d freed %d bytes from process %zu from %zu to %zu\n",
           clk_get(),
           memUpperbound,
@@ -171,6 +181,7 @@ void scheduler_processTerminationHandler(int SIGNUM) {
   if (loaded != NULL) {
     size_t memindex = loaded->memindex;
     size_t memUpperbound = buddy_upperbound(loaded->memsize);
+
     fprintf(log_memory, "At time %d allocated %zu bytes for process %zu from %zu to %zu\n",
             clk_get(),
             memUpperbound,
@@ -287,7 +298,7 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   if (processPid == 0) {
     char pRemainingTime[10];
     sprintf(pRemainingTime, "%zu", msgqBuffer->p.remaining);
-    execl(BIN_DIRECTORY"/process.out", "process.out", pRemainingTime, (char *)NULL);
+    execl(BIN_DIRECTORY "/process.out", "process.out", pRemainingTime, (char *)NULL);
   }
 
   kill(processPid, SIGTSTP);
@@ -301,7 +312,6 @@ void scheduler_createProcess(msgBuf *msgqBuffer) {
   if (loaded != NULL) {
     size_t memindex = loaded->memindex;
     size_t memUpperbound = buddy_upperbound(loaded->memsize);
-
     fprintf(log_memory, "At time %d allocated %zu bytes for process %zu from %zu to %zu\n",
             clk_get(),
             memUpperbound,
