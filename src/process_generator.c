@@ -10,7 +10,7 @@ int selectedAlgorithm;
 pid_t clkPid, schedulerPid;
 
 void parseInput(char *fn) {
-  FILE *iFile = fopen("input/processes.txt", "r");
+  FILE *iFile = fopen(fn, "r");
   if (iFile == NULL) {
     perror("Error opening the input file");
     exit(1);
